@@ -1,0 +1,21 @@
+{
+  "require": {
+    "php": ">=8.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5.56"
+  },
+  "autoload-dev": {
+    "classmap": [
+      "tests/"
+    ]
+  },
+  "scripts": {
+    "make-pot": "wp i18n make-pot . languages/sev-replace-webp-for-w3tc.pot --exclude=node_modules,vendor",
+    "update-po": "wp i18n update-po languages/sev-replace-webp-for-w3tc.pot languages/",
+    "make-php": "wp i18n make-php languages/",
+    "lint:php": "phpcs -p",
+    "fix:php": "phpcbf -p",
+    "test": "phpunit"
+  }
+}
