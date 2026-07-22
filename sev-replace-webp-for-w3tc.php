@@ -1,17 +1,16 @@
 <?php
 /**
  * Plugin Name: SEV Replace WebP for W3TC
- * Description: Permanently rewrites image URLs in all posts from their original extension to the WebP version once W3 Total Cache ImageService has converted them, with an option to delete the original source images.
- * Author: Heinrich Franz
- * Author URI: https://sevmatic.com
  * Plugin URI: https://github.com/HFranz/wp-sev-replace-webp-for-w3tc
- * License: GPLv2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Description: Rewrites image URLs to WebP once W3 Total Cache ImageService converts them, with an option to delete the original source images.
  * Version: 1.0.0
- * Text Domain: sev-replace-webp-for-w3tc
- * Domain Path: /languages
  * Requires at least: 6.0
  * Requires PHP: 8.0
+ * Author: Heinrich Franz
+ * Author URI: https://sevmatic.com
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: sev-replace-webp-for-w3tc
  * Requires Plugins: w3-total-cache
  *
  * php version 8.0
