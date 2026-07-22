@@ -125,6 +125,21 @@ class Attachment_Urls {
 	}
 
 	/**
+	 * Resolves the WebP filename of an intermediate size given the attachment's
+	 * (pre-migration) full-size filename, without any directory component.
+	 *
+	 * Shared by Attachment_Migrator so its rewritten `_wp_attachment_metadata`
+	 * points at the file W3TC actually wrote, same as {@see self::build_pairs()}.
+	 *
+	 * @param string $full_filename Full-size filename (e.g. "photo-scaled.jpg"), no directory.
+	 * @param string $size_filename Size filename from the attachment metadata, no directory.
+	 * @return string|null The .webp filename, or null if the extension is not convertible.
+	 */
+	public static function webp_size_filename( string $full_filename, string $size_filename ): ?string {
+		return self::to_webp_for_size( $size_filename, '', self::scaled_base( $full_filename ) );
+	}
+
+	/**
 	 * Extracts the "-scaled" basename (without extension) from a full-size path/URL.
 	 *
 	 * @param string $full_path_or_url Full-size path or URL.

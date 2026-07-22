@@ -41,6 +41,8 @@ class Attachment_Migrator {
 
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 		if ( is_array( $metadata ) ) {
+			$full_filename = basename( $attached_file );
+
 			if ( ! empty( $metadata['file'] ) && is_string( $metadata['file'] ) ) {
 				$metadata['file'] = preg_replace( '/\.(jpe?g|png|gif)$/i', '.webp', $metadata['file'] );
 			}
@@ -48,8 +50,11 @@ class Attachment_Migrator {
 			if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
 				foreach ( $metadata['sizes'] as $size_name => $size ) {
 					if ( ! empty( $size['file'] ) && is_string( $size['file'] ) ) {
-						$metadata['sizes'][ $size_name ]['file']      = preg_replace( '/\.(jpe?g|png|gif)$/i', '.webp', $size['file'] );
-						$metadata['sizes'][ $size_name ]['mime-type'] = 'image/webp';
+						$size_webp_file = Attachment_Urls::webp_size_filename( $full_filename, $size['file'] );
+						if ( null !== $size_webp_file ) {
+							$metadata['sizes'][ $size_name ]['file']      = $size_webp_file;
+							$metadata['sizes'][ $size_name ]['mime-type'] = 'image/webp';
+						}
 					}
 				}
 			}

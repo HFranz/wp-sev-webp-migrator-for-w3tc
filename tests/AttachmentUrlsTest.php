@@ -155,4 +155,24 @@ final class AttachmentUrlsTest extends TestCase {
 			$pairs
 		);
 	}
+
+	/**
+	 * Attachment_Migrator uses this to rewrite `_wp_attachment_metadata['sizes']`
+	 * after migration; it must resolve to the same filename build_pairs() used
+	 * to confirm the WebP exists, or the rewritten metadata points at a file
+	 * that was never created.
+	 */
+	public function test_webp_size_filename_matches_w3tc_naming_for_scaled_attachments(): void {
+		$this->assertSame(
+			'photo-scaled-300x200.webp',
+			Attachment_Urls::webp_size_filename( 'photo-scaled.jpg', 'photo-300x200.jpg' )
+		);
+	}
+
+	public function test_webp_size_filename_falls_back_to_extension_swap_when_full_size_is_not_scaled(): void {
+		$this->assertSame(
+			'photo-300x200.webp',
+			Attachment_Urls::webp_size_filename( 'photo.jpg', 'photo-300x200.jpg' )
+		);
+	}
 }
