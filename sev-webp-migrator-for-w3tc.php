@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: SEV WebP Migrator for W3TC
- * Plugin URI: https://github.com/HFranz/sev-webp-migrator-for-w3tc
+ * Plugin URI: https://github.com/HFranz/wp-sev-webp-migrator-for-w3tc
  * Description: Replaces image URLs with their WebP versions once W3 Total Cache ImageService converts them, with optional deletion of the originals.
  * Version: 1.0.0
  * Requires at least: 6.0
