@@ -234,6 +234,7 @@ class Admin_Settings {
 	 * @return void
 	 */
 	public function render_notices(): void {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only display of int counters from our own already nonce-verified redirect in handle_process_batch(); nothing is written here.
 		if ( ! isset( $_GET['sevwmfw3tc_processed'] ) || ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -241,6 +242,7 @@ class Admin_Settings {
 		$processed = (int) $_GET['sevwmfw3tc_processed'];
 		$posts     = isset( $_GET['sevwmfw3tc_posts'] ) ? (int) $_GET['sevwmfw3tc_posts'] : 0;
 		$files     = isset( $_GET['sevwmfw3tc_files'] ) ? (int) $_GET['sevwmfw3tc_files'] : 0;
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
@@ -272,6 +274,7 @@ class Admin_Settings {
 				'fields'         => 'ids',
 				'orderby'        => 'ID',
 				'order'          => 'ASC',
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- No alternative: filtering by W3TC's own w3tc_imageservice meta key is required, and the result set is bounded by $limit/count_unprocessed()'s cap.
 				'meta_query'     => array(
 					array(
 						'key'     => 'w3tc_imageservice',
