@@ -48,7 +48,7 @@ class Admin_Settings {
 	 */
 	public function add_settings_page(): void {
 		add_options_page(
-			__( 'SEV Replace WebP for W3TC', 'sev-replace-webp-for-w3tc' ),
+			__( 'Replace WebP for W3TC', 'sev-replace-webp-for-w3tc' ),
 			__( 'Replace WebP for W3TC', 'sev-replace-webp-for-w3tc' ),
 			'manage_options',
 			self::PAGE_SLUG,
@@ -76,7 +76,7 @@ class Admin_Settings {
 
 		add_settings_field(
 			self::OPTION_DELETE_ORIGINALS,
-			__( 'Quellbilder löschen', 'sev-replace-webp-for-w3tc' ),
+			__( 'Delete source images', 'sev-replace-webp-for-w3tc' ),
 			array( $this, 'render_delete_originals_field' ),
 			self::PAGE_SLUG,
 			'sevrwfw3tc_main'
@@ -93,10 +93,10 @@ class Admin_Settings {
 		<label>
 			<input type="checkbox" name="<?php echo esc_attr( self::OPTION_DELETE_ORIGINALS ); ?>" value="1"
 				<?php checked( (bool) get_option( self::OPTION_DELETE_ORIGINALS, false ) ); ?> />
-			<?php esc_html_e( 'Nach erfolgreichem Ersetzen die ursprünglichen Bilddateien (jpg/jpeg/png/gif) unwiderruflich löschen.', 'sev-replace-webp-for-w3tc' ); ?>
+			<?php esc_html_e( 'After successful replacement, permanently delete the original image files (jpg/jpeg/png/gif).', 'sev-replace-webp-for-w3tc' ); ?>
 		</label>
 		<p class="description">
-			<?php esc_html_e( 'Eine Datei wird nur gelöscht, wenn ihr WebP-Gegenstück bereits auf dem Server existiert. Ohne Backup ist dieser Schritt nicht rückgängig zu machen.', 'sev-replace-webp-for-w3tc' ); ?>
+			<?php esc_html_e( 'A file is only deleted if its WebP counterpart already exists on the server. Without a backup, this step cannot be undone.', 'sev-replace-webp-for-w3tc' ); ?>
 		</p>
 		<?php
 	}
@@ -114,24 +114,24 @@ class Admin_Settings {
 		$remaining = $this->count_unprocessed();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'SEV Replace WebP for W3TC', 'sev-replace-webp-for-w3tc' ); ?></h1>
+			<h1><?php esc_html_e( 'Replace WebP for W3TC', 'sev-replace-webp-for-w3tc' ); ?></h1>
 
 			<form action="options.php" method="post">
 				<?php
 				settings_fields( self::PAGE_SLUG );
 				do_settings_sections( self::PAGE_SLUG );
-				submit_button( __( 'Einstellungen speichern', 'sev-replace-webp-for-w3tc' ) );
+				submit_button( __( 'Save settings', 'sev-replace-webp-for-w3tc' ) );
 				?>
 			</form>
 
 			<hr />
 
-			<h2><?php esc_html_e( 'Bereits konvertierte Bilder verarbeiten', 'sev-replace-webp-for-w3tc' ); ?></h2>
+			<h2><?php esc_html_e( 'Process already converted images', 'sev-replace-webp-for-w3tc' ); ?></h2>
 			<p>
 				<?php
 				printf(
 					/* translators: %d: number of not-yet-processed attachments. */
-					esc_html__( 'Bilder, die W3TC bereits vor Aktivierung dieses Plugins konvertiert hat, werden nicht automatisch erfasst. Noch nicht verarbeitete konvertierte Bilder: %d.', 'sev-replace-webp-for-w3tc' ),
+					esc_html__( 'Images that W3TC had already converted before this plugin was activated are not picked up automatically. Converted images not yet processed: %d.', 'sev-replace-webp-for-w3tc' ),
 					(int) $remaining
 				);
 				?>
@@ -144,7 +144,7 @@ class Admin_Settings {
 					submit_button(
 						sprintf(
 							/* translators: %d: batch size. */
-							__( 'Nächste %d Bilder jetzt verarbeiten', 'sev-replace-webp-for-w3tc' ),
+							__( 'Process next %d images now', 'sev-replace-webp-for-w3tc' ),
 							self::BATCH_SIZE
 						),
 						'primary'
@@ -152,7 +152,7 @@ class Admin_Settings {
 					?>
 				</form>
 			<?php else : ?>
-				<p><strong><?php esc_html_e( 'Alle konvertierten Bilder wurden bereits verarbeitet.', 'sev-replace-webp-for-w3tc' ); ?></strong></p>
+				<p><strong><?php esc_html_e( 'All converted images have already been processed.', 'sev-replace-webp-for-w3tc' ); ?></strong></p>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -165,7 +165,7 @@ class Admin_Settings {
 	 */
 	public function handle_process_batch(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Keine Berechtigung.', 'sev-replace-webp-for-w3tc' ) );
+			wp_die( esc_html__( 'You do not have permission to do this.', 'sev-replace-webp-for-w3tc' ) );
 		}
 
 		check_admin_referer( 'sevrwfw3tc_process_batch' );
@@ -221,7 +221,7 @@ class Admin_Settings {
 			esc_html(
 				sprintf(
 					/* translators: 1: attachments processed, 2: posts updated, 3: files deleted. */
-					__( '%1$d Bild(er) verarbeitet, %2$d Beitrag/Beiträge aktualisiert, %3$d Quelldatei(en) gelöscht.', 'sev-replace-webp-for-w3tc' ),
+					__( '%1$d image(s) processed, %2$d post(s) updated, %3$d source file(s) deleted.', 'sev-replace-webp-for-w3tc' ),
 					$processed,
 					$posts,
 					$files

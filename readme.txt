@@ -53,7 +53,7 @@ Deleting source images is permanent and cannot be undone by this plugin. Keep ba
 1. Upload the `sev-replace-webp-for-w3tc` folder to the `/wp-content/plugins/` directory.
 2. Activate the plugin through the **Plugins** menu in WordPress.
 3. Ensure W3 Total Cache is installed and active.
-4. Optionally enable "Quellbilder löschen" (delete source images) under **Settings → Replace WebP for W3TC**.
+4. Optionally enable "Delete source images" under **Settings → Replace WebP for W3TC**.
 5. For images W3TC already converted before activation, use the "process now" tool on the same settings page.
 
 == Frequently Asked Questions ==
