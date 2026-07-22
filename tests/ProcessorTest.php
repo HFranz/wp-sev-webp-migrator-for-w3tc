@@ -66,16 +66,18 @@ final class ProcessorTest extends TestCase {
 	 * once W3TC actually finishes converting them.
 	 */
 	public function test_process_does_nothing_while_an_intermediate_size_is_not_yet_converted(): void {
+		// Intermediate sizes keep the pre-scale original's filename in their own
+		// metadata (no "-scaled"), even though the full size is "-scaled".
 		touch( "{$this->tmp_dir}/photo-scaled.jpg" );
 		touch( "{$this->tmp_dir}/photo-scaled.webp" ); // Full size already converted by W3TC.
-		touch( "{$this->tmp_dir}/photo-scaled-300x200.jpg" ); // Intermediate size: not converted yet, no .webp.
+		touch( "{$this->tmp_dir}/photo-300x200.jpg" ); // Intermediate size: not converted yet, no .webp.
 
 		WPTestStub::$attachment_urls[42]     = 'http://example.com/uploads/photo-scaled.jpg';
 		WPTestStub::$attached_files[42]      = "{$this->tmp_dir}/photo-scaled.jpg";
 		WPTestStub::$attachment_metadata[42] = array(
 			'file'  => 'photo-scaled.jpg',
 			'sizes' => array(
-				'medium' => array( 'file' => 'photo-scaled-300x200.jpg' ),
+				'medium' => array( 'file' => 'photo-300x200.jpg' ),
 			),
 		);
 		WPTestStub::$mime_types[42] = 'image/jpeg';
@@ -98,7 +100,8 @@ final class ProcessorTest extends TestCase {
 
 	public function test_process_does_nothing_when_only_an_intermediate_size_is_converted_but_full_size_is_not(): void {
 		touch( "{$this->tmp_dir}/photo-scaled.jpg" ); // Full size: not converted yet, no .webp.
-		touch( "{$this->tmp_dir}/photo-scaled-300x200.jpg" );
+		touch( "{$this->tmp_dir}/photo-300x200.jpg" );
+		// W3TC names the intermediate size's WebP after the "-scaled" full file, not after "photo-300x200.jpg".
 		touch( "{$this->tmp_dir}/photo-scaled-300x200.webp" ); // Intermediate size already converted.
 
 		WPTestStub::$attachment_urls[43]     = 'http://example.com/uploads/photo-scaled.jpg';
@@ -106,7 +109,7 @@ final class ProcessorTest extends TestCase {
 		WPTestStub::$attachment_metadata[43] = array(
 			'file'  => 'photo-scaled.jpg',
 			'sizes' => array(
-				'medium' => array( 'file' => 'photo-scaled-300x200.jpg' ),
+				'medium' => array( 'file' => 'photo-300x200.jpg' ),
 			),
 		);
 		WPTestStub::$mime_types[43] = 'image/jpeg';

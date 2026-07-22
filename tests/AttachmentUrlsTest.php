@@ -64,6 +64,46 @@ final class AttachmentUrlsTest extends TestCase {
 		$this->assertSame( array(), Attachment_Urls::url_pairs( 999 ) );
 	}
 
+	/**
+	 * Reproduces the reported bug: for attachments WordPress scaled down on
+	 * upload, intermediate sizes keep the pre-scale original's filename in
+	 * their own metadata ("photo-1024x683.jpg"), but W3TC ImageService writes
+	 * their WebP counterparts named after the "-scaled" full file instead
+	 * ("photo-scaled-1024x683.webp"). A plain extension swap on the size's own
+	 * filename builds a WebP path that never exists on disk, so the
+	 * attachment's intermediate sizes are never recognised as converted.
+	 */
+	public function test_url_pairs_matches_w3tc_naming_for_scaled_intermediate_sizes(): void {
+		WPTestStub::$attachment_urls[ 42 ]     = 'http://example.com/wp-content/uploads/2026/07/photo-scaled.jpg';
+		WPTestStub::$attachment_metadata[ 42 ] = array(
+			'file'  => '2026/07/photo-scaled.jpg',
+			'sizes' => array(
+				'thumbnail' => array( 'file' => 'photo-150x150.jpg' ),
+				'medium'    => array( 'file' => 'photo-1024x683.jpg' ),
+			),
+		);
+
+		$pairs = Attachment_Urls::url_pairs( 42 );
+
+		$this->assertSame(
+			array(
+				array(
+					'old' => 'http://example.com/wp-content/uploads/2026/07/photo-scaled.jpg',
+					'new' => 'http://example.com/wp-content/uploads/2026/07/photo-scaled.webp',
+				),
+				array(
+					'old' => 'http://example.com/wp-content/uploads/2026/07/photo-150x150.jpg',
+					'new' => 'http://example.com/wp-content/uploads/2026/07/photo-scaled-150x150.webp',
+				),
+				array(
+					'old' => 'http://example.com/wp-content/uploads/2026/07/photo-1024x683.jpg',
+					'new' => 'http://example.com/wp-content/uploads/2026/07/photo-scaled-1024x683.webp',
+				),
+			),
+			$pairs
+		);
+	}
+
 	public function test_path_pairs_mirrors_url_pairs_against_filesystem_paths(): void {
 		WPTestStub::$attached_files[ 42 ]      = '/srv/uploads/2026/07/photo.jpg';
 		WPTestStub::$attachment_metadata[ 42 ] = array(
@@ -84,6 +124,32 @@ final class AttachmentUrlsTest extends TestCase {
 				array(
 					'old' => '/srv/uploads/2026/07/photo-150x150.jpg',
 					'new' => '/srv/uploads/2026/07/photo-150x150.webp',
+				),
+			),
+			$pairs
+		);
+	}
+
+	public function test_path_pairs_matches_w3tc_naming_for_scaled_intermediate_sizes(): void {
+		WPTestStub::$attached_files[ 42 ]      = '/srv/uploads/2026/07/photo-scaled.jpg';
+		WPTestStub::$attachment_metadata[ 42 ] = array(
+			'file'  => '2026/07/photo-scaled.jpg',
+			'sizes' => array(
+				'medium' => array( 'file' => 'photo-1024x683.jpg' ),
+			),
+		);
+
+		$pairs = Attachment_Urls::path_pairs( 42 );
+
+		$this->assertSame(
+			array(
+				array(
+					'old' => '/srv/uploads/2026/07/photo-scaled.jpg',
+					'new' => '/srv/uploads/2026/07/photo-scaled.webp',
+				),
+				array(
+					'old' => '/srv/uploads/2026/07/photo-1024x683.jpg',
+					'new' => '/srv/uploads/2026/07/photo-scaled-1024x683.webp',
 				),
 			),
 			$pairs
