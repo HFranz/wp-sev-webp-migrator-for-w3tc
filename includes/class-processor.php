@@ -66,6 +66,17 @@ class Processor {
 		// otherwise get_attached_file() would already return the new path.
 		$path_pairs = Attachment_Urls::path_pairs( $attachment_id );
 
+		if ( ! $this->all_webp_files_exist( $path_pairs ) ) {
+			// W3TC ImageService converts the full size before its intermediate
+			// sizes, writing this meta once the full size is done rather than
+			// once per attachment. Migrating now would mark the attachment as
+			// fully processed while some sizes are still the original files,
+			// and since already_processed() short-circuits future runs, those
+			// sizes would never be replaced/deleted once W3TC finishes them.
+			// Wait for a later w3tc_imageservice meta write instead.
+			return $result;
+		}
+
 		$result['posts_updated'] = $this->content_replacer->replace( $url_pairs );
 		$result['migrated']      = $this->attachment_migrator->migrate( $attachment_id );
 
@@ -74,5 +85,21 @@ class Processor {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Whether every path pair's .webp counterpart already exists on disk.
+	 *
+	 * @param array<int, array{old: string, new: string}> $path_pairs Filesystem old/new path pairs.
+	 * @return bool True only if a .webp file exists for the full size and every intermediate size.
+	 */
+	private function all_webp_files_exist( array $path_pairs ): bool {
+		foreach ( $path_pairs as $pair ) {
+			if ( ! file_exists( $pair['new'] ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

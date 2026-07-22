@@ -193,4 +193,13 @@ const W3TC = true;
 require_once dirname( __DIR__ ) . '/includes/class-attachment-urls.php';
 require_once dirname( __DIR__ ) . '/includes/class-content-replacer.php';
 
+// Attachment_Migrator and Source_Cleaner touch the real filesystem/$wpdb schema in
+// ways that aren't meaningfully stubbable here, so their own methods are not
+// exercised by tests. Their class definitions are still loaded because Processor
+// instantiates them directly; every Processor test scenario is expected to stop at
+// Processor's own gate before migrate()/delete_originals() would actually run.
+require_once dirname( __DIR__ ) . '/includes/class-attachment-migrator.php';
+require_once dirname( __DIR__ ) . '/includes/class-source-cleaner.php';
+require_once dirname( __DIR__ ) . '/includes/class-processor.php';
+
 do_action( 'plugins_loaded' );
