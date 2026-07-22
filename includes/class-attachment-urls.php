@@ -166,4 +166,28 @@ class Attachment_Urls {
 
 		return preg_replace( self::CONVERTIBLE_EXTENSION, '.webp', $path_or_url );
 	}
+
+	/**
+	 * Resolves a predicted .webp filesystem path against whatever case W3TC
+	 * actually wrote it in. On a case-sensitive filesystem, an uploaded file
+	 * with an uppercase extension (e.g. "photo.JPG") could plausibly lead W3TC
+	 * to write "photo.WEBP" instead of the lowercase ".webp" this class always
+	 * predicts; without this, such an attachment would look permanently
+	 * unconverted.
+	 *
+	 * @param string $predicted_webp_path Filesystem path ending in ".webp" (any case).
+	 * @return string|null The path as it actually exists on disk, or null if neither case exists.
+	 */
+	public static function resolve_case( string $predicted_webp_path ): ?string {
+		if ( file_exists( $predicted_webp_path ) ) {
+			return $predicted_webp_path;
+		}
+
+		$upper = preg_replace( '/\.webp$/i', '.WEBP', $predicted_webp_path );
+		if ( null !== $upper && $upper !== $predicted_webp_path && file_exists( $upper ) ) {
+			return $upper;
+		}
+
+		return null;
+	}
 }

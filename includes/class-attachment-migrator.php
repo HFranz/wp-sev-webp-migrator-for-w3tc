@@ -33,7 +33,15 @@ class Attachment_Migrator {
 		}
 
 		$webp_file = preg_replace( '/\.(jpe?g|png|gif)$/i', '.webp', $attached_file );
-		if ( null === $webp_file || $webp_file === $attached_file || ! file_exists( $webp_file ) ) {
+		if ( null === $webp_file || $webp_file === $attached_file ) {
+			return false;
+		}
+
+		// W3TC may have written the file with an uppercase .WEBP extension
+		// (e.g. following an uploaded "photo.JPG"); resolve to whichever case
+		// actually exists so the DB never points at a nonexistent file.
+		$webp_file = Attachment_Urls::resolve_case( $webp_file );
+		if ( null === $webp_file ) {
 			return false;
 		}
 
@@ -42,17 +50,22 @@ class Attachment_Migrator {
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 		if ( is_array( $metadata ) ) {
 			$full_filename = basename( $attached_file );
+			$base_dir      = trailingslashit( dirname( $attached_file ) );
 
-			if ( ! empty( $metadata['file'] ) && is_string( $metadata['file'] ) ) {
-				$metadata['file'] = preg_replace( '/\.(jpe?g|png|gif)$/i', '.webp', $metadata['file'] );
+			if ( ! empty( $metadata['file'] ) && is_string( $metadata['file'] ) && str_ends_with( $metadata['file'], $full_filename ) ) {
+				$metadata['file'] = substr( $metadata['file'], 0, -strlen( $full_filename ) ) . basename( $webp_file );
 			}
 
 			if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
 				foreach ( $metadata['sizes'] as $size_name => $size ) {
 					if ( ! empty( $size['file'] ) && is_string( $size['file'] ) ) {
-						$size_webp_file = Attachment_Urls::webp_size_filename( $full_filename, $size['file'] );
+						$predicted_webp_file = Attachment_Urls::webp_size_filename( $full_filename, $size['file'] );
+						$size_webp_file       = null !== $predicted_webp_file
+							? Attachment_Urls::resolve_case( $base_dir . $predicted_webp_file )
+							: null;
+
 						if ( null !== $size_webp_file ) {
-							$metadata['sizes'][ $size_name ]['file']      = $size_webp_file;
+							$metadata['sizes'][ $size_name ]['file']      = basename( $size_webp_file );
 							$metadata['sizes'][ $size_name ]['mime-type'] = 'image/webp';
 						}
 					}

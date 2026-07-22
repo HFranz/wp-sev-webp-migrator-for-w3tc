@@ -66,7 +66,7 @@ class Processor {
 		// otherwise get_attached_file() would already return the new path.
 		$path_pairs = Attachment_Urls::path_pairs( $attachment_id );
 
-		if ( ! $this->all_webp_files_exist( $path_pairs ) ) {
+		if ( ! $this->resolve_webp_case( $path_pairs, $url_pairs ) ) {
 			// W3TC ImageService converts the full size before its intermediate
 			// sizes, writing this meta once the full size is done rather than
 			// once per attachment. Migrating now would mark the attachment as
@@ -88,15 +88,32 @@ class Processor {
 	}
 
 	/**
-	 * Whether every path pair's .webp counterpart already exists on disk.
+	 * Confirms every path pair's .webp counterpart exists on disk, resolving
+	 * each pair's predicted extension case (see {@see Attachment_Urls::resolve_case()})
+	 * against whatever W3TC actually wrote and mirroring it onto the
+	 * corresponding URL pair, so content is rewritten to a URL that actually
+	 * resolves.
 	 *
-	 * @param array<int, array{old: string, new: string}> $path_pairs Filesystem old/new path pairs.
+	 * @param array<int, array{old: string, new: string}> $path_pairs Filesystem old/new path pairs, modified in place.
+	 * @param array<int, array{old: string, new: string}> $url_pairs  URL old/new pairs, modified in place.
 	 * @return bool True only if a .webp file exists for the full size and every intermediate size.
 	 */
-	private function all_webp_files_exist( array $path_pairs ): bool {
-		foreach ( $path_pairs as $pair ) {
-			if ( ! file_exists( $pair['new'] ) ) {
+	private function resolve_webp_case( array &$path_pairs, array &$url_pairs ): bool {
+		foreach ( $path_pairs as $i => $pair ) {
+			$resolved = Attachment_Urls::resolve_case( $pair['new'] );
+			if ( null === $resolved ) {
 				return false;
+			}
+
+			if ( $resolved === $pair['new'] ) {
+				continue;
+			}
+
+			$path_pairs[ $i ]['new'] = $resolved;
+
+			if ( isset( $url_pairs[ $i ] ) ) {
+				$extension              = substr( $resolved, (int) strrpos( $resolved, '.' ) );
+				$url_pairs[ $i ]['new'] = preg_replace( '/\.webp$/i', $extension, $url_pairs[ $i ]['new'] );
 			}
 		}
 
