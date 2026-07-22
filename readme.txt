@@ -8,7 +8,7 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Permanently rewrites image URLs in all posts from their original extension to WebP once W3 Total Cache ImageService has converted them, and optionally deletes the source images.
+Rewrites image URLs to WebP once W3 Total Cache ImageService converts them, with an option to delete the original source images.
 
 == Description ==
 
