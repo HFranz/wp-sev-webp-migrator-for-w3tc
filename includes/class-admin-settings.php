@@ -151,16 +151,17 @@ class Admin_Settings {
 					esc_html__( 'Images that were converted by W3 Total Cache before this plugin was activated are not processed automatically.', 'sev-webp-migrator-for-w3tc' ));
 				?>
 			</p>
-            <p><strong>
-                <?php
-                printf(
-                /* translators: %d: number of not-yet-processed attachments. */
-                        esc_html__( 'Images remaining to process: %d', 'sev-webp-migrator-for-w3tc' ),
-                        $remaining
-                );
-                ?>
-                </strong>
-            </p>
+			<p><strong>
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: %d: number of not-yet-processed attachments. */
+						__( 'Images remaining to process: %d', 'sev-webp-migrator-for-w3tc' ),
+						$remaining
+					)
+				);
+				?>
+			</strong></p>
 			<?php if ( $remaining > 0 ) : ?>
 				<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 					<input type="hidden" name="action" value="sevwmfw3tc_process_batch" />
