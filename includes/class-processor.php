@@ -2,10 +2,10 @@
 /**
  * Orchestrates the replace-and-optionally-delete workflow for one attachment.
  *
- * @package SevReplaceWebPForW3TC
+ * @package SevWebPMigratorForW3TC
  */
 
-namespace SevReplaceWebPForW3TC;
+namespace SevWebPMigratorForW3TC;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die();

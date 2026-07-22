@@ -10,7 +10,7 @@ Dieses WordPress-Plugin ergänzt **W3 Total Cache (W3TC)**: Sobald W3TC ImageSer
 konvertiert hat, schreibt dieses Plugin die Umstellung **dauerhaft in die Datenbank**, statt sie nur zur Laufzeit
 per Content-Filter vorzutäuschen (das macht das Schwester-Plugin `sev-rewrite-free-webp-for-w3tc`).
 
-- `sev-replace-webp-for-w3tc.php` – Bootstrap. Hookt sich nur ein, wenn `defined('W3TC')` (Laufzeit-Check statt
+- `sev-webp-migrator-for-w3tc.php` – Bootstrap. Hookt sich nur ein, wenn `defined('W3TC')` (Laufzeit-Check statt
   `Requires Plugins`, wichtig für mu-plugins) via `plugins_loaded`.
 - `includes/class-attachment-urls.php` – `Attachment_Urls`: baut aus `wp_get_attachment_metadata()` die Liste aller
   Dateien eines Attachments (Originalgröße + alle registrierten Zwischengrößen) und paart jede mit ihrer
@@ -27,9 +27,9 @@ per Content-Filter vorzutäuschen (das macht das Schwester-Plugin `sev-rewrite-f
   `post_mime_type === 'image/webp'` als Idempotenz-Marker (kein zusätzliches Postmeta nötig).
 - `includes/class-conversion-listener.php` – hookt `added_post_meta`/`updated_post_meta`, reagiert nur auf
   `meta_key === 'w3tc_imageservice'` mit `status === 'converted'` und ruft dann `Processor::process()` auf.
-- `includes/class-admin-settings.php` – Einstellungsseite unter **Settings → Replace WebP for W3TC**: Checkbox
-  „Quellbilder löschen“ (Option `sevrwfw3tc_delete_originals`, Default aus) sowie ein manueller Batch-Trigger
-  (`admin-post.php?action=sevrwfw3tc_process_batch`) für Bilder, die W3TC vor Plugin-Aktivierung konvertiert hat.
+- `includes/class-admin-settings.php` – Einstellungsseite unter **Settings → WebP Migrator for W3TC**: Checkbox
+  „Quellbilder löschen“ (Option `sevwmfw3tc_delete_originals`, Default aus) sowie ein manueller Batch-Trigger
+  (`admin-post.php?action=sevwmfw3tc_process_batch`) für Bilder, die W3TC vor Plugin-Aktivierung konvertiert hat.
 
 **Datenfluss:** W3TC konvertiert ein Bild → Postmeta-Hook feuert → `Processor` ersetzt URLs in allen Posts →
 migriert das Attachment → löscht optional die Originaldateien.
@@ -39,7 +39,7 @@ migriert das Attachment → löscht optional die Originaldateien.
 Quellbilder ist standardmäßig deaktiviert und unwiderruflich.
 
 ## Namespace & Konventionen
-- Alle Klassen liegen im Namespace `SevReplaceWebPForW3TC` (kein globaler Namespace, keine Prefixe nötig).
+- Alle Klassen liegen im Namespace `SevWebPMigratorForW3TC` (kein globaler Namespace, keine Prefixe nötig).
 - Jede Datei beginnt mit `if ( ! defined( 'ABSPATH' ) ) { die(); }`.
 - Strikte Typisierung, Scalar-Type-Hints und Return-Types überall in `includes/`.
 - Reihenfolge in `Processor::process()` ist absichtlich fix: `path_pairs()` **muss** vor `migrate()` erfasst werden,
@@ -59,13 +59,13 @@ Quellbilder ist standardmäßig deaktiviert und unwiderruflich.
 ## Weitere Dev-Workflows
 - `composer lint:php` / `composer fix:php` – PHPCS/PHPCBF (WPCS).
 - `composer make-pot` / `update-po` / `make-php` – i18n-Workflow via WP-CLI (`wp i18n ...`), Text-Domain
-  `sev-replace-webp-for-w3tc`, Sprachdateien in `languages/`.
+  `sev-webp-migrator-for-w3tc`, Sprachdateien in `languages/`.
 - Keine Build-Pipeline für JS/CSS – das Plugin enthält keine Assets.
-- `uninstall.php` entfernt nur die Plugin-Option `sevrwfw3tc_delete_originals`. Bereits ersetzte Posts/Attachments
+- `uninstall.php` entfernt nur die Plugin-Option `sevwmfw3tc_delete_originals`. Bereits ersetzte Posts/Attachments
   bleiben bewusst unverändert (die Umstellung ist dauerhaft und unabhängig vom Plugin-Status).
 
 ## Beim Ändern von Code beachten
-- Neue Hooks/Filter nur im `plugins_loaded`-Guard in `sev-replace-webp-for-w3tc.php` registrieren, damit sie
+- Neue Hooks/Filter nur im `plugins_loaded`-Guard in `sev-webp-migrator-for-w3tc.php` registrieren, damit sie
   inaktiv bleiben, wenn W3TC fehlt.
 - Änderungen an `Attachment_Urls` (Endungs-Regex, Größen-Handling) immer mit Tests in
   `tests/AttachmentUrlsTest.php` absichern.

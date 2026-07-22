@@ -2,10 +2,10 @@
 /**
  * Migrates an attachment's own record to its WebP files.
  *
- * @package SevReplaceWebPForW3TC
+ * @package SevWebPMigratorForW3TC
  */
 
-namespace SevReplaceWebPForW3TC;
+namespace SevWebPMigratorForW3TC;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die();

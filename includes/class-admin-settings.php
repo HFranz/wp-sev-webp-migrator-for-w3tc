@@ -2,25 +2,25 @@
 /**
  * Settings page and manual bulk-processing action.
  *
- * @package SevReplaceWebPForW3TC
+ * @package SevWebPMigratorForW3TC
  */
 
-namespace SevReplaceWebPForW3TC;
+namespace SevWebPMigratorForW3TC;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die();
 }
 
 /**
- * Registers the "Settings → SEV Replace WebP for W3TC" admin page, where the
+ * Registers the "Settings → SEV WebP Migrator for W3TC" admin page, where the
  * "delete original images" option lives, and a manual "process now" batch
  * action for images that were already converted by W3TC before this plugin
  * was active (the live listener only fires for conversions happening from now on).
  */
 class Admin_Settings {
 
-	private const OPTION_DELETE_ORIGINALS = 'sevrwfw3tc_delete_originals';
-	private const PAGE_SLUG               = 'sev-replace-webp-for-w3tc';
+	private const OPTION_DELETE_ORIGINALS = 'sevwmfw3tc_delete_originals';
+	private const PAGE_SLUG               = 'sev-webp-migrator-for-w3tc';
 	private const BATCH_SIZE              = 20;
 
 	private Processor $processor;
@@ -37,7 +37,7 @@ class Admin_Settings {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'admin_init', array( $this, 'register_setting' ) );
-		add_action( 'admin_post_sevrwfw3tc_process_batch', array( $this, 'handle_process_batch' ) );
+		add_action( 'admin_post_sevwmfw3tc_process_batch', array( $this, 'handle_process_batch' ) );
 		add_action( 'admin_notices', array( $this, 'render_notices' ) );
 	}
 
@@ -48,8 +48,8 @@ class Admin_Settings {
 	 */
 	public function add_settings_page(): void {
 		add_options_page(
-			__( 'Replace WebP for W3TC', 'sev-replace-webp-for-w3tc' ),
-			__( 'Replace WebP for W3TC', 'sev-replace-webp-for-w3tc' ),
+			__( 'WebP Migrator for W3TC', 'sev-webp-migrator-for-w3tc' ),
+			__( 'WebP Migrator for W3TC', 'sev-webp-migrator-for-w3tc' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_settings_page' )
@@ -72,14 +72,14 @@ class Admin_Settings {
 			)
 		);
 
-		add_settings_section( 'sevrwfw3tc_main', '', '__return_false', self::PAGE_SLUG );
+		add_settings_section( 'sevwmfw3tc_main', '', '__return_false', self::PAGE_SLUG );
 
 		add_settings_field(
 			self::OPTION_DELETE_ORIGINALS,
-			__( 'Delete source images', 'sev-replace-webp-for-w3tc' ),
+			__( 'Delete source images', 'sev-webp-migrator-for-w3tc' ),
 			array( $this, 'render_delete_originals_field' ),
 			self::PAGE_SLUG,
-			'sevrwfw3tc_main'
+			'sevwmfw3tc_main'
 		);
 	}
 
@@ -93,10 +93,10 @@ class Admin_Settings {
 		<label>
 			<input type="checkbox" name="<?php echo esc_attr( self::OPTION_DELETE_ORIGINALS ); ?>" value="1"
 				<?php checked( (bool) get_option( self::OPTION_DELETE_ORIGINALS, false ) ); ?> />
-			<?php esc_html_e( 'After successful replacement, permanently delete the original image files (jpg/jpeg/png/gif).', 'sev-replace-webp-for-w3tc' ); ?>
+			<?php esc_html_e( 'After successful replacement, permanently delete the original image files (jpg/jpeg/png/gif).', 'sev-webp-migrator-for-w3tc' ); ?>
 		</label>
 		<p class="description">
-			<?php esc_html_e( 'A file is only deleted if its WebP counterpart already exists on the server. Without a backup, this step cannot be undone.', 'sev-replace-webp-for-w3tc' ); ?>
+			<?php esc_html_e( 'A file is only deleted if its WebP counterpart already exists on the server. Without a backup, this step cannot be undone.', 'sev-webp-migrator-for-w3tc' ); ?>
 		</p>
 		<?php
 	}
@@ -114,37 +114,37 @@ class Admin_Settings {
 		$remaining = $this->count_unprocessed();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Replace WebP for W3TC', 'sev-replace-webp-for-w3tc' ); ?></h1>
+			<h1><?php esc_html_e( 'WebP Migrator for W3TC', 'sev-webp-migrator-for-w3tc' ); ?></h1>
 
 			<form action="options.php" method="post">
 				<?php
 				settings_fields( self::PAGE_SLUG );
 				do_settings_sections( self::PAGE_SLUG );
-				submit_button( __( 'Save settings', 'sev-replace-webp-for-w3tc' ) );
+				submit_button( __( 'Save settings', 'sev-webp-migrator-for-w3tc' ) );
 				?>
 			</form>
 
 			<hr />
 
-			<h2><?php esc_html_e( 'Process already converted images', 'sev-replace-webp-for-w3tc' ); ?></h2>
+			<h2><?php esc_html_e( 'Process already converted images', 'sev-webp-migrator-for-w3tc' ); ?></h2>
 			<p>
 				<?php
 				printf(
 					/* translators: %d: number of not-yet-processed attachments. */
-					esc_html__( 'Images that W3TC had already converted before this plugin was activated are not picked up automatically. Converted images not yet processed: %d.', 'sev-replace-webp-for-w3tc' ),
+					esc_html__( 'Images that W3TC had already converted before this plugin was activated are not picked up automatically. Converted images not yet processed: %d.', 'sev-webp-migrator-for-w3tc' ),
 					(int) $remaining
 				);
 				?>
 			</p>
 			<?php if ( $remaining > 0 ) : ?>
 				<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
-					<input type="hidden" name="action" value="sevrwfw3tc_process_batch" />
-					<?php wp_nonce_field( 'sevrwfw3tc_process_batch' ); ?>
+					<input type="hidden" name="action" value="sevwmfw3tc_process_batch" />
+					<?php wp_nonce_field( 'sevwmfw3tc_process_batch' ); ?>
 					<?php
 					submit_button(
 						sprintf(
 							/* translators: %d: batch size. */
-							__( 'Process next %d images now', 'sev-replace-webp-for-w3tc' ),
+							__( 'Process next %d images now', 'sev-webp-migrator-for-w3tc' ),
 							self::BATCH_SIZE
 						),
 						'primary'
@@ -152,7 +152,7 @@ class Admin_Settings {
 					?>
 				</form>
 			<?php else : ?>
-				<p><strong><?php esc_html_e( 'All converted images have already been processed.', 'sev-replace-webp-for-w3tc' ); ?></strong></p>
+				<p><strong><?php esc_html_e( 'All converted images have already been processed.', 'sev-webp-migrator-for-w3tc' ); ?></strong></p>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -165,10 +165,10 @@ class Admin_Settings {
 	 */
 	public function handle_process_batch(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'sev-replace-webp-for-w3tc' ) );
+			wp_die( esc_html__( 'You do not have permission to do this.', 'sev-webp-migrator-for-w3tc' ) );
 		}
 
-		check_admin_referer( 'sevrwfw3tc_process_batch' );
+		check_admin_referer( 'sevwmfw3tc_process_batch' );
 
 		$delete_originals = (bool) get_option( self::OPTION_DELETE_ORIGINALS, false );
 		$attachment_ids    = $this->find_unprocessed( self::BATCH_SIZE );
@@ -191,9 +191,9 @@ class Admin_Settings {
 		$redirect = add_query_arg(
 			array(
 				'page'                => self::PAGE_SLUG,
-				'sevrwfw3tc_processed' => $processed,
-				'sevrwfw3tc_posts'     => $posts_updated,
-				'sevrwfw3tc_files'     => $files_deleted,
+				'sevwmfw3tc_processed' => $processed,
+				'sevwmfw3tc_posts'     => $posts_updated,
+				'sevwmfw3tc_files'     => $files_deleted,
 			),
 			admin_url( 'options-general.php' )
 		);
@@ -208,20 +208,20 @@ class Admin_Settings {
 	 * @return void
 	 */
 	public function render_notices(): void {
-		if ( ! isset( $_GET['sevrwfw3tc_processed'] ) || ! current_user_can( 'manage_options' ) ) {
+		if ( ! isset( $_GET['sevwmfw3tc_processed'] ) || ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		$processed = (int) $_GET['sevrwfw3tc_processed'];
-		$posts     = isset( $_GET['sevrwfw3tc_posts'] ) ? (int) $_GET['sevrwfw3tc_posts'] : 0;
-		$files     = isset( $_GET['sevrwfw3tc_files'] ) ? (int) $_GET['sevrwfw3tc_files'] : 0;
+		$processed = (int) $_GET['sevwmfw3tc_processed'];
+		$posts     = isset( $_GET['sevwmfw3tc_posts'] ) ? (int) $_GET['sevwmfw3tc_posts'] : 0;
+		$files     = isset( $_GET['sevwmfw3tc_files'] ) ? (int) $_GET['sevwmfw3tc_files'] : 0;
 
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 			esc_html(
 				sprintf(
 					/* translators: 1: attachments processed, 2: posts updated, 3: files deleted. */
-					__( '%1$d image(s) processed, %2$d post(s) updated, %3$d source file(s) deleted.', 'sev-replace-webp-for-w3tc' ),
+					__( '%1$d image(s) processed, %2$d post(s) updated, %3$d source file(s) deleted.', 'sev-webp-migrator-for-w3tc' ),
 					$processed,
 					$posts,
 					$files

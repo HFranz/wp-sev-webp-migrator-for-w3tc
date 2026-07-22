@@ -48,4 +48,4 @@ jobs:
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
-          SLUG: sev-replace-webp-for-w3tc
+          SLUG: sev-webp-migrator-for-w3tc

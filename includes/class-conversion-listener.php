@@ -2,10 +2,10 @@
 /**
  * Listens for W3TC ImageService conversions and triggers processing.
  *
- * @package SevReplaceWebPForW3TC
+ * @package SevWebPMigratorForW3TC
  */
 
-namespace SevReplaceWebPForW3TC;
+namespace SevWebPMigratorForW3TC;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die();
@@ -42,6 +42,6 @@ class Conversion_Listener {
 			return;
 		}
 
-		$this->processor->process( $object_id, (bool) get_option( 'sevrwfw3tc_delete_originals', false ) );
+		$this->processor->process( $object_id, (bool) get_option( 'sevwmfw3tc_delete_originals', false ) );
 	}
 }

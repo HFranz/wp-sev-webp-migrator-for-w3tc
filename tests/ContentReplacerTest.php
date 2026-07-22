@@ -3,7 +3,7 @@
 declare( strict_types=1 );
 
 use PHPUnit\Framework\TestCase;
-use SevReplaceWebPForW3TC\Content_Replacer;
+use SevWebPMigratorForW3TC\Content_Replacer;
 
 final class ContentReplacerTest extends TestCase {
 

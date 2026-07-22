@@ -1,4 +1,4 @@
-=== SEV Replace WebP for W3TC ===
+=== SEV WebP Migrator for W3TC ===
 Contributors: hfranz
 Tags: webp, images, w3-total-cache, performance, optimization
 Requires at least: 6.0
@@ -12,7 +12,7 @@ Replaces image URLs with their WebP versions once W3 Total Cache ImageService co
 
 == Description ==
 
-SEV Replace WebP for W3TC is a companion plugin for [W3 Total Cache](https://wordpress.org/plugins/w3-total-cache/) that finishes the job once W3TC ImageService has converted an image to WebP.
+SEV WebP Migrator for W3TC is a companion plugin for [W3 Total Cache](https://wordpress.org/plugins/w3-total-cache/) that finishes the job once W3TC ImageService has converted an image to WebP.
 
 No changes to `.htaccess`, `mod_rewrite`, or web server configuration are required. Instead, it writes the replacement back into the database **once**, unlike a runtime content filter that swaps URLs on every request: as soon as W3TC marks an attachment as converted, every occurrence of that image's URL in `post_content` across the whole site is permanently replaced, from its original extension (jpg/jpeg/png/gif) to `.webp`. The attachment's own record (attached file, metadata, mime type) is updated to match, so the Media Library and REST API stay consistent too.
 
@@ -27,7 +27,7 @@ This is an independent, unofficial add-on and is not affiliated with, endorsed b
 * Updates the attachment's own file reference, metadata, and mime type to match.
 * Optional: deletes the original source files after a successful replacement.
 * A source file is only ever deleted once its `.webp` counterpart has been confirmed to exist on disk.
-* Manual "process now" tool in **Settings → Replace WebP for W3TC** for images that were converted before this plugin was active.
+* Manual "process now" tool in **Settings → WebP Migrator for W3TC** for images that were converted before this plugin was active.
 
 **How it works**
 
@@ -52,10 +52,10 @@ Deleting source images is permanent and cannot be undone by this plugin. Keep ba
 
 == Installation ==
 
-1. Upload the `sev-replace-webp-for-w3tc` folder to the `/wp-content/plugins/` directory.
+1. Upload the `sev-webp-migrator-for-w3tc` folder to the `/wp-content/plugins/` directory.
 2. Activate the plugin through the **Plugins** menu in WordPress.
 3. Ensure W3 Total Cache is installed and active.
-4. Optionally enable "Delete source images" under **Settings → Replace WebP for W3TC**.
+4. Optionally enable "Delete source images" under **Settings → WebP Migrator for W3TC**.
 5. For images W3TC already converted before activation, use the "process now" tool on the same settings page.
 
 == Frequently Asked Questions ==

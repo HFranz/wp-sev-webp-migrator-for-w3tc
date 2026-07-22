@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: SEV Replace WebP for W3TC
- * Plugin URI: https://github.com/HFranz/wp-sev-replace-webp-for-w3tc
+ * Plugin Name: SEV WebP Migrator for W3TC
+ * Plugin URI: https://github.com/HFranz/sev-webp-migrator-for-w3tc
  * Description: Replaces image URLs with their WebP versions once W3 Total Cache ImageService converts them, with optional deletion of the originals.
  * Version: 1.0.0
  * Requires at least: 6.0
@@ -10,17 +10,17 @@
  * Author URI: https://sevmatic.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: sev-replace-webp-for-w3tc
+ * Text Domain: sev-webp-migrator-for-w3tc
  * Requires Plugins: w3-total-cache
  *
  * php version 8.0
  *
- * @package SevReplaceWebPForW3TC
+ * @package SevWebPMigratorForW3TC
  */
 
-use SevReplaceWebPForW3TC\Admin_Settings;
-use SevReplaceWebPForW3TC\Conversion_Listener;
-use SevReplaceWebPForW3TC\Processor;
+use SevWebPMigratorForW3TC\Admin_Settings;
+use SevWebPMigratorForW3TC\Conversion_Listener;
+use SevWebPMigratorForW3TC\Processor;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die();

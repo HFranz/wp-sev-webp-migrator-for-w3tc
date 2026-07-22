@@ -2,10 +2,10 @@
 /**
  * Builds old→new URL/path pairs for a converted attachment.
  *
- * @package SevReplaceWebPForW3TC
+ * @package SevWebPMigratorForW3TC
  */
 
-namespace SevReplaceWebPForW3TC;
+namespace SevWebPMigratorForW3TC;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die();

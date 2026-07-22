@@ -13,7 +13,7 @@
     <source>
         <include>
             <directory>includes</directory>
-            <file>sev-replace-webp-for-w3tc.php</file>
+            <file>sev-webp-migrator-for-w3tc.php</file>
         </include>
     </source>
 </phpunit>

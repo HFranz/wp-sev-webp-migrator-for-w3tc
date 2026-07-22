@@ -3,7 +3,7 @@
 declare( strict_types=1 );
 
 use PHPUnit\Framework\TestCase;
-use SevReplaceWebPForW3TC\Attachment_Urls;
+use SevWebPMigratorForW3TC\Attachment_Urls;
 
 final class AttachmentUrlsTest extends TestCase {
 
