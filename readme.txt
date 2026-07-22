@@ -46,6 +46,8 @@ This is an independent, unofficial add-on and is not affiliated with, endorsed b
 
 This plugin **does not convert images** to WebP — conversion is handled entirely by W3 Total Cache ImageService. It only reacts once W3TC reports an image as converted.
 
+This plugin only handles **WebP**. AVIF is not supported: W3 Total Cache only offers AVIF conversion in its paid Pro version, and this plugin's free-tier ImageService integration only ever sees WebP conversions.
+
 Deleting source images is permanent and cannot be undone by this plugin. Keep backups before enabling automatic deletion.
 
 == Installation ==
