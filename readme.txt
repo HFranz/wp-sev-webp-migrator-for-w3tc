@@ -72,7 +72,7 @@ The rewrite-free plugin swaps URLs on the fly for browsers that support WebP, le
 
 A source file is only deleted once its `.webp` counterpart has been confirmed to exist on disk, after post content and the attachment record have already been updated. Deletion is still permanent and disabled by default — enable it deliberately, and keep backups.
 
-= Does it work with multisite installations? =
+= Does it work with WordPress Multisite installations? =
 
 Yes. Each site processes its own W3 Total Cache ImageService conversions independently.
 
