@@ -3,7 +3,7 @@
  * Plugin Name: SEV WebP Migrator for W3TC
  * Plugin URI: https://github.com/HFranz/wp-sev-webp-migrator-for-w3tc
  * Description: Replaces image URLs with their WebP versions once W3 Total Cache ImageService converts them, with optional deletion of the originals.
- * Version: 1.0.0
+ * Version: 2.0.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Heinrich Franz
@@ -25,6 +25,8 @@ use SevWebPMigratorForW3TC\Processor;
 if ( ! defined( 'ABSPATH' ) ) {
 	die();
 }
+
+const SEVWMFW3TC_VERSION = '2.0.0';
 
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-attachment-urls.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-content-replacer.php';

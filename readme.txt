@@ -4,7 +4,7 @@ Tags: webp, images, w3-total-cache, performance, optimization
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,11 @@ A source file is only deleted once its `.webp` counterpart has been confirmed to
 Yes. Each site processes its own W3 Total Cache ImageService conversions independently.
 
 == Changelog ==
+
+= 2.0.0 =
+* Improved compatibility with W3 Total Cache ImageService image conversions.
+* Added an option to automatically delete original images after successful conversion.
+* Various code improvements.
 
 = 1.0.0 =
 * Initial release.
