@@ -21,8 +21,10 @@ description: 'WordPress coding rules: secure, performant, testable, WP standards
 
 ## 3. Coding Standards
 - Follow WPCS + WordPress PHP/JS conventions
-- PHP 8.0+ compatible unless stated otherwise
-- Strict comparisons where appropriate
+- PHP >= 8.0
+- Strong typing required: `declare(strict_types=1);`, typed parameters, properties and return types
+- Keep internal code strictly typed; isolate untyped boundaries
+- Use strict comparisons where appropriate
 - Use DocBlocks for public APIs
 
 ## 4. i18n
