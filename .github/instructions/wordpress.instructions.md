@@ -21,7 +21,7 @@ description: 'WordPress coding rules: secure, performant, testable, WP standards
 
 ## 3. Coding Standards
 - Follow WPCS + WordPress PHP/JS conventions
-- PHP 7.4+ compatible unless stated otherwise
+- PHP 8.0+ compatible unless stated otherwise
 - Strict comparisons where appropriate
 - Use DocBlocks for public APIs
 
