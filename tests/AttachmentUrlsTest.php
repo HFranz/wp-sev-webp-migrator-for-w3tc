@@ -188,11 +188,11 @@ final class AttachmentUrlsTest extends TestCase {
 	}
 
 	public function test_resolve_case_returns_predicted_path_when_it_exists_as_is(): void {
-		touch( "{$this->tmp_dir}/photo.webp" );
+		touch( "$this->tmp_dir/photo.webp" );
 
 		$this->assertSame(
-			"{$this->tmp_dir}/photo.webp",
-			Attachment_Urls::resolve_case( "{$this->tmp_dir}/photo.webp" )
+			"$this->tmp_dir/photo.webp",
+			Attachment_Urls::resolve_case( "$this->tmp_dir/photo.webp" )
 		);
 	}
 
@@ -207,20 +207,20 @@ final class AttachmentUrlsTest extends TestCase {
 	 * same path, so the fallback branch can't be meaningfully exercised.
 	 */
 	public function test_resolve_case_falls_back_to_uppercase_extension(): void {
-		touch( "{$this->tmp_dir}/case-probe.lower" );
-		if ( file_exists( "{$this->tmp_dir}/CASE-PROBE.LOWER" ) ) {
+		touch( "$this->tmp_dir/case-probe.lower" );
+		if ( file_exists( "$this->tmp_dir/CASE-PROBE.LOWER" ) ) {
 			$this->markTestSkipped( 'Filesystem is case-insensitive; cannot exercise the case-sensitive fallback here.' );
 		}
 
-		touch( "{$this->tmp_dir}/photo.WEBP" );
+		touch( "$this->tmp_dir/photo.WEBP" );
 
 		$this->assertSame(
-			"{$this->tmp_dir}/photo.WEBP",
-			Attachment_Urls::resolve_case( "{$this->tmp_dir}/photo.webp" )
+			"$this->tmp_dir/photo.WEBP",
+			Attachment_Urls::resolve_case( "$this->tmp_dir/photo.webp" )
 		);
 	}
 
 	public function test_resolve_case_returns_null_when_neither_case_exists(): void {
-		$this->assertNull( Attachment_Urls::resolve_case( "{$this->tmp_dir}/photo.webp" ) );
+		$this->assertNull( Attachment_Urls::resolve_case( "$this->tmp_dir/photo.webp" ) );
 	}
 }
