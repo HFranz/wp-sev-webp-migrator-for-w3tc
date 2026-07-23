@@ -1,51 +1,20 @@
-name: Build and Package
+name: CI
 
 on:
   push:
-    branches: [ main ]
-    tags: [ '*' ]
+    branches:
+      - main
+    tags:
+      - "*"
+
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
-  build-and-package:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.5'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
-          coverage: none
-
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress
-
-      - name: Run Unit tests
-        run: composer test
-
-      - name: Reinstall production dependencies
-        run: |
-          rm -rf vendor
-          composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
-
-  deploy:
-    name: Deploy to WordPress.org SVN
-    needs: build-and-package
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: WordPress Plugin Deploy
-        uses: 10up/action-wordpress-plugin-deploy@stable
-        env:
-          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
-          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
-          SLUG: sev-webp-migrator-for-w3tc
+  build:
+    uses: HFranz/github-workflows/.github/workflows/build-and-deploy-to-wporg.yml@main
+    with:
+      plugin-slug: sev-webp-migrator-for-w3tc
+      deploy: false
+    secrets: inherit
