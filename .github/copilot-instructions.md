@@ -1,6 +1,9 @@
 # Project standards
 See [`AGENTS.md`](../AGENTS.md) at the repository root for architecture, conventions, and workflows. It is the primary source of truth for AI coding agents working in this repository — always read it before making changes.
 
+# Language
+- Use English for identifiers (classes, methods, variables), comments, and translation source strings.
+
 # Response style
 - Be concise.
 - No introductions or conclusions.
