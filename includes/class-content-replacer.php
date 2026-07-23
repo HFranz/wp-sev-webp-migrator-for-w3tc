@@ -50,7 +50,7 @@ class Content_Replacer {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$matches = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT ID, post_content FROM {$wpdb->posts} WHERE post_content LIKE %s AND post_type != 'revision'",
+					"SELECT ID, post_content FROM $wpdb->posts WHERE post_content LIKE %s AND post_type != 'revision'",
 					$like
 				)
 			);

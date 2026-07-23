@@ -39,7 +39,7 @@ class Source_Cleaner {
 				continue;
 			}
 
-			// Only ever delete files that resolve inside the uploads directory.
+			// Only ever delete files that resolve inside uploads directory.
 			$real_old = realpath( $old );
 			if ( false === $real_old || false === $uploads_basedir || ! str_starts_with( $real_old, $uploads_basedir . DIRECTORY_SEPARATOR ) ) {
 				continue;

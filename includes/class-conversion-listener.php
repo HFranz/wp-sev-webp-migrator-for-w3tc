@@ -18,10 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Conversion_Listener {
 
-	private Processor $processor;
-
-	public function __construct( Processor $processor ) {
-		$this->processor = $processor;
+	public function __construct( private Processor $processor ) {
 	}
 
 	/**
@@ -32,6 +29,8 @@ class Conversion_Listener {
 	 * @param string $meta_key   Meta key.
 	 * @param mixed  $meta_value Meta value.
 	 * @return void
+	 *
+	 * @noinspection PhpUnusedParameterInspection
 	 */
 	public function on_meta_write( int $meta_id, int $object_id, string $meta_key, mixed $meta_value ): void {
 		if ( 'w3tc_imageservice' !== $meta_key ) {
@@ -42,6 +41,6 @@ class Conversion_Listener {
 			return;
 		}
 
-		$this->processor->process( $object_id, (bool) get_option( 'sevwmfw3tc_delete_originals', false ) );
+		$this->processor->process( $object_id, (bool) get_option( 'sevwmfw3tc_delete_originals' ) );
 	}
 }

@@ -12,10 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Registers the "Settings → SEV WebP Migrator for W3TC" admin page, where the
- * "delete original images" option lives, and a manual "process now" batch
- * action for images that were already converted by W3TC before this plugin
- * was active (the live listener only fires for conversions happening from now on).
+ * Adds the "Settings → SEV WebP Migrator for W3TC" admin page with the
+ * "delete original images" option.
+ *
+ * Also adds a manual "process now" action for images already converted by W3TC
+ * before this plugin was enabled, since the automatic listener only handles
+ * future conversions.
  */
 class Admin_Settings {
 
@@ -23,18 +25,15 @@ class Admin_Settings {
 	private const PAGE_SLUG               = 'sev-webp-migrator-for-w3tc';
 	private const BATCH_SIZE              = 20;
 
-	private Processor $processor;
-
 	/**
 	 * Hook suffix of our settings page, as returned by add_options_page().
 	 * Used to only enqueue our stylesheet on that page.
 	 *
 	 * @var string|false
 	 */
-	private $settings_page_hook = false;
+	private string|false $settings_page_hook = false;
 
-	public function __construct( Processor $processor ) {
-		$this->processor = $processor;
+	public function __construct( private Processor $processor ) {
 	}
 
 	/**
