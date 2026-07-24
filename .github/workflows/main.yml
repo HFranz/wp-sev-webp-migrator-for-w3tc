@@ -16,5 +16,5 @@ jobs:
     uses: HFranz/github-workflows/.github/workflows/build-and-deploy-to-wporg.yml@main
     with:
       plugin-slug: sev-webp-migrator-for-w3tc
-      deploy: false
+      deploy: true
     secrets: inherit
