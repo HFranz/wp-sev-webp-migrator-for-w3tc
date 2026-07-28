@@ -76,6 +76,11 @@ A source file is only deleted once its `.webp` counterpart has been confirmed to
 
 Yes. Each site processes its own W3 Total Cache ImageService conversions independently.
 
+== Screenshots ==
+screenshot-1.png
+screenshot-2.png
+screenshot-3.png
+
 == Changelog ==
 
 = 2.0.1 =
