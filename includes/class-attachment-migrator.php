@@ -23,25 +23,30 @@ class Attachment_Migrator {
 	/**
 	 * Repoints the attachment's own metadata at its WebP files.
 	 *
-	 * @param int $attachment_id Attachment post ID.
+	 * Takes the already-resolved old/new path pairs from
+	 * {@see Processor::resolve_webp_case()} instead of re-predicting them here.
+	 * That resolution can involve more than a plain extension swap - a
+	 * different filesystem case, W3TC's own "child attachment" record (see
+	 * {@see Attachment_Urls::w3tc_child_webp()}), or a regenerated intermediate
+	 * size - and re-deriving it independently here previously meant this
+	 * method could disagree with what content_replacer->replace() had just
+	 * used, silently leaving the attachment unmigrated even though its post
+	 * content already pointed at valid, working WebP URLs.
+	 *
+	 * @param int                                            $attachment_id Attachment post ID.
+	 * @param array<int, array{old: string, new: string}>    $path_pairs    Resolved old/new path pairs, full size first
+	 *                                                                      (see {@see Attachment_Urls::path_pairs()}).
 	 * @return bool True if the attachment record was updated.
 	 */
-	public function migrate( int $attachment_id ): bool {
-		$attached_file = get_attached_file( $attachment_id, true );
-		if ( ! is_string( $attached_file ) || '' === $attached_file ) {
+	public function migrate( int $attachment_id, array $path_pairs ): bool {
+		if ( empty( $path_pairs ) ) {
 			return false;
 		}
 
-		$webp_file = preg_replace( '/\.(jpe?g|png|gif)$/i', '.webp', $attached_file );
-		if ( null === $webp_file || $webp_file === $attached_file ) {
-			return false;
-		}
+		$attached_file = $path_pairs[0]['old'];
+		$webp_file     = $path_pairs[0]['new'];
 
-		// W3TC may have written the file with an uppercase .WEBP extension
-		// (e.g. following an uploaded "photo.JPG"); resolve to whichever case
-		// actually exists so the DB never points at a nonexistent file.
-		$webp_file = Attachment_Urls::resolve_case( $webp_file );
-		if ( null === $webp_file ) {
+		if ( ! file_exists( $webp_file ) ) {
 			return false;
 		}
 
@@ -57,12 +62,14 @@ class Attachment_Migrator {
 			}
 
 			if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
+				$resolved_sizes = array();
+				foreach ( array_slice( $path_pairs, 1 ) as $pair ) {
+					$resolved_sizes[ $pair['old'] ] = $pair['new'];
+				}
+
 				foreach ( $metadata['sizes'] as $size_name => $size ) {
 					if ( ! empty( $size['file'] ) && is_string( $size['file'] ) ) {
-						$predicted_webp_file = Attachment_Urls::webp_size_filename( $full_filename, $size['file'] );
-						$size_webp_file       = null !== $predicted_webp_file
-							? Attachment_Urls::resolve_case( $base_dir . $predicted_webp_file )
-							: null;
+						$size_webp_file = $resolved_sizes[ $base_dir . $size['file'] ] ?? null;
 
 						if ( null !== $size_webp_file ) {
 							$metadata['sizes'][ $size_name ]['file']      = basename( $size_webp_file );

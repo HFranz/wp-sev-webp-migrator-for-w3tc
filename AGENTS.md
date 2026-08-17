@@ -44,6 +44,10 @@ Quellbilder ist standardmäßig deaktiviert und unwiderruflich.
 - Strikte Typisierung, Scalar-Type-Hints und Return-Types überall in `includes/`.
 - Reihenfolge in `Processor::process()` ist absichtlich fix: `path_pairs()` **muss** vor `migrate()` erfasst werden,
   da `get_attached_file()` nach der Migration bereits den neuen `.webp`-Pfad zurückgibt.
+- `Attachment_Migrator::migrate()` nimmt die bereits von `Processor::resolve_webp_case()` aufgelösten `$path_pairs`
+  entgegen und leitet die WebP-Pfade **nicht** mehr selbst her (früher eigene, unabhängige Vorhersage-Logik – konnte
+  von der in `resolve_webp_case()` abweichen, u.a. beim W3TC-Kind-Attachment-Fallback, und lieferte dann `false`
+  zurück, obwohl der Content bereits korrekt umgeschrieben war).
 - Löschoperationen (`Source_Cleaner`) prüfen immer zuerst `file_exists()` auf die `.webp`-Zieldatei und die
   Uploads-Verzeichnis-Zugehörigkeit, bevor eine Originaldatei angefasst wird.
 

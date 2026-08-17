@@ -86,12 +86,44 @@ function get_post_mime_type( int $attachment_id ): string|false {
 	return WPTestStub::$mime_types[ $attachment_id ] ?? false;
 }
 
+function get_post_meta( int $post_id, string $key = '', bool $single = false ): mixed {
+	if ( '' === $key ) {
+		return WPTestStub::$post_meta[ $post_id ] ?? array();
+	}
+
+	if ( ! array_key_exists( $post_id, WPTestStub::$post_meta ) || ! array_key_exists( $key, WPTestStub::$post_meta[ $post_id ] ) ) {
+		return $single ? '' : array();
+	}
+
+	$value = WPTestStub::$post_meta[ $post_id ][ $key ];
+
+	return $single ? $value : array( $value );
+}
+
 function get_option( string $option, mixed $default = false ): mixed {
 	return WPTestStub::$options[ $option ] ?? $default;
 }
 
 function clean_post_cache( int $post_id ): void {
 	WPTestStub::$cleaned_post_caches[] = $post_id;
+}
+
+/**
+ * Stub for WordPress core's subsize generator. Records the call and, if a
+ * test configured one, runs a side effect (e.g. actually creating the
+ * "regenerated" file on disk) to simulate a successful regeneration.
+ */
+function wp_create_image_subsizes( string $file, int $attachment_id ): array {
+	WPTestStub::$image_subsizes_calls[] = array(
+		'file'          => $file,
+		'attachment_id' => $attachment_id,
+	);
+
+	if ( null !== WPTestStub::$create_image_subsizes_side_effect ) {
+		( WPTestStub::$create_image_subsizes_side_effect )( $file, $attachment_id );
+	}
+
+	return array();
 }
 
 // ---------------------------------------------------------------------------
@@ -166,20 +198,32 @@ class WPTestStub {
 	/** attachment_id => post_mime_type */
 	public static array $mime_types = array();
 
+	/** post_id => array<meta_key, single value> (single-value get_post_meta() only, matching plugin usage) */
+	public static array $post_meta = array();
+
 	/** option_name => value */
 	public static array $options = array();
 
 	/** post_ids passed to clean_post_cache() */
 	public static array $cleaned_post_caches = array();
 
+	/** @var array<int, array{file: string, attachment_id: int}> Calls made to wp_create_image_subsizes(). */
+	public static array $image_subsizes_calls = array();
+
+	/** @var (callable(string, int): void)|null Optional side effect run by the wp_create_image_subsizes() stub. */
+	public static $create_image_subsizes_side_effect = null;
+
 	/** Resets all mock data (without clearing registered filters/actions). */
 	public static function reset(): void {
-		self::$attachment_urls      = array();
-		self::$attachment_metadata  = array();
-		self::$attached_files       = array();
-		self::$mime_types           = array();
-		self::$options              = array();
-		self::$cleaned_post_caches  = array();
+		self::$attachment_urls                    = array();
+		self::$attachment_metadata                = array();
+		self::$attached_files                     = array();
+		self::$mime_types                         = array();
+		self::$post_meta                          = array();
+		self::$options                            = array();
+		self::$cleaned_post_caches                = array();
+		self::$image_subsizes_calls               = array();
+		self::$create_image_subsizes_side_effect  = null;
 	}
 }
 

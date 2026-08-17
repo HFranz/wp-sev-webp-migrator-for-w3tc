@@ -246,10 +246,13 @@ class Admin_Settings {
 
 		$redirect = add_query_arg(
 			array(
-				'page'                => self::PAGE_SLUG,
+				'page'                 => self::PAGE_SLUG,
 				'sevwmfw3tc_processed' => $processed,
 				'sevwmfw3tc_posts'     => $posts_updated,
 				'sevwmfw3tc_files'     => $files_deleted,
+				// Lets render_notices() tell "nothing was left to do" apart from
+				// "found images but every one of them was skipped" (see Processor::log_skip()).
+				'sevwmfw3tc_attempted' => count( $attachment_ids ),
 			),
 			admin_url( 'options-general.php' )
 		);
@@ -272,6 +275,7 @@ class Admin_Settings {
 		$processed = (int) $_GET['sevwmfw3tc_processed'];
 		$posts     = isset( $_GET['sevwmfw3tc_posts'] ) ? (int) $_GET['sevwmfw3tc_posts'] : 0;
 		$files     = isset( $_GET['sevwmfw3tc_files'] ) ? (int) $_GET['sevwmfw3tc_files'] : 0;
+		$attempted = isset( $_GET['sevwmfw3tc_attempted'] ) ? (int) $_GET['sevwmfw3tc_attempted'] : 0;
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		printf(
@@ -286,10 +290,25 @@ class Admin_Settings {
 				)
 			)
 		);
+
+		if ( 0 === $processed && $attempted > 0 ) {
+			printf(
+				'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+				esc_html__( 'None of the found images could be processed. This usually means W3 Total Cache has not finished converting every image size yet. Enable WP_DEBUG_LOG and check the PHP error log for "[SEV WebP Migrator for W3TC] Attachment #... skipped: ..." entries to see the exact reason for each one.', 'sev-webp-migrator-for-w3tc' )
+			);
+		}
 	}
 
 	/**
 	 * Finds attachment IDs that W3TC has converted but this plugin has not yet processed.
+	 *
+	 * The status check is done as part of the query itself (matching the serialized
+	 * meta value directly) rather than fetching $limit rows and filtering by status in
+	 * PHP afterwards. Attachments with the w3tc_imageservice meta key but a different
+	 * status (e.g. "pending", "error") are common and not necessarily contiguous with
+	 * the "converted" ones by ID; filtering post-limit could return 0 of the requested
+	 * $limit rows as actually converted, even while thousands of converted-but-unprocessed
+	 * attachments exist further down - silently stalling every batch at "0 processed".
 	 *
 	 * @param int $limit Maximum number of IDs to return.
 	 * @return int[] Attachment post IDs.
@@ -304,11 +323,14 @@ class Admin_Settings {
 				'fields'         => 'ids',
 				'orderby'        => 'ID',
 				'order'          => 'ASC',
-				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- No alternative: filtering by W3TC's own w3tc_imageservice meta key is required, and the result set is bounded by $limit/count_unprocessed()'s cap.
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- No alternative: filtering by W3TC's own w3tc_imageservice meta key/value is required, and the result set is bounded by $limit/count_unprocessed()'s cap.
 				'meta_query'     => array(
 					array(
 						'key'     => 'w3tc_imageservice',
-						'compare' => 'EXISTS',
+						// Matches the serialized array's status entry directly (e.g. a:2:{s:6:"status";s:9:"converted";...}),
+						// regardless of which other keys W3TC stores alongside it or their order.
+						'value'   => 's:6:"status";s:9:"converted"',
+						'compare' => 'LIKE',
 					),
 				),
 			)

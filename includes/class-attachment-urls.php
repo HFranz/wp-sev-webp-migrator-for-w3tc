@@ -125,21 +125,6 @@ class Attachment_Urls {
 	}
 
 	/**
-	 * Resolves the WebP filename of an intermediate size given the attachment's
-	 * (pre-migration) full-size filename, without any directory component.
-	 *
-	 * Shared by Attachment_Migrator so its rewritten `_wp_attachment_metadata`
-	 * points at the file W3TC actually wrote, same as {@see self::build_pairs()}.
-	 *
-	 * @param string $full_filename Full-size filename (e.g. "photo-scaled.jpg"), no directory.
-	 * @param string $size_filename Size filename from the attachment metadata, no directory.
-	 * @return string|null The .webp filename, or null if the extension is not convertible.
-	 */
-	public static function webp_size_filename( string $full_filename, string $size_filename ): ?string {
-		return self::to_webp_for_size( $size_filename, '', self::scaled_base( $full_filename ) );
-	}
-
-	/**
 	 * Extracts the "-scaled" basename (without extension) from a full-size path/URL.
 	 *
 	 * @param string $full_path_or_url Full-size path or URL.
@@ -189,5 +174,55 @@ class Attachment_Urls {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Resolves the full-size WebP file via W3TC's own "child attachment" record,
+	 * for when the predicted extension-swap path doesn't exist on disk.
+	 *
+	 * W3TC ImageService's conversion job writes the converted file at the
+	 * predicted path (original filename with its extension swapped), but also
+	 * always creates a genuinely separate WordPress attachment post for it
+	 * (`post_parent` = the original attachment), tracked in the original's
+	 * `w3tc_imageservice` postmeta as `post_children['webp']` (or the legacy
+	 * `post_child` field). That predicted path can end up wrong or missing -
+	 * e.g. a later re-conversion job deletes the previous child attachment
+	 * (and its file) via wp_delete_attachment() before writing the new one, so
+	 * a request in between briefly (or, if the new job then fails, permanently)
+	 * sees no file at the predicted path even though a child attachment
+	 * reference still exists. The child attachment's own get_attached_file()
+	 * is authoritative regardless of what path W3TC actually used.
+	 *
+	 * @param int $attachment_id Original attachment post ID.
+	 * @return array{path: string, url: string}|null The child attachment's actual file, or null
+	 *                                                if no valid, existing WebP child is linked.
+	 */
+	public static function w3tc_child_webp( int $attachment_id ): ?array {
+		$meta = get_post_meta( $attachment_id, 'w3tc_imageservice', true );
+		if ( ! is_array( $meta ) ) {
+			return null;
+		}
+
+		$child_id = $meta['post_children']['webp'] ?? $meta['post_child'] ?? null;
+		if ( empty( $child_id ) ) {
+			return null;
+		}
+
+		$child_id = (int) $child_id;
+		if ( 'image/webp' !== get_post_mime_type( $child_id ) ) {
+			return null;
+		}
+
+		$path = get_attached_file( $child_id );
+		$url  = wp_get_attachment_url( $child_id );
+
+		if ( ! is_string( $path ) || '' === $path || ! file_exists( $path ) || ! is_string( $url ) || '' === $url ) {
+			return null;
+		}
+
+		return array(
+			'path' => $path,
+			'url'  => $url,
+		);
 	}
 }

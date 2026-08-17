@@ -4,7 +4,7 @@ Tags: webp, images, w3-total-cache, performance, optimization
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.0.1
+Stable tag: 2.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -82,6 +82,19 @@ screenshot-2.png
 screenshot-3.png
 
 == Changelog ==
+
+= 2.0.5 =
+* Fixed attachments getting stuck reporting "0 images processed" despite their post content being successfully rewritten to working WebP URLs. Attachment_Migrator was independently re-predicting the WebP path with the older, simpler logic instead of reusing what Processor had already resolved (including the 2.0.4 child-attachment fallback), so it could fail to find the file and leave the attachment marked unmigrated forever.
+
+= 2.0.4 =
+* Fixed images getting permanently stuck when the full-size WebP file was missing from its predicted path despite W3 Total Cache marking the image "converted" (e.g. after a later re-conversion job deleted and replaced it). The plugin now also checks W3TC's own "child attachment" record for the converted file, which is authoritative regardless of the file's actual path on disk.
+
+= 2.0.3 =
+* Fixed the "Process Previously Converted Images" batch silently finding 0 images to process (with the remaining count stuck at the same number and nothing logged) when attachments with a non-"converted" w3tc_imageservice status happened to sort ahead of converted ones by ID. The status is now filtered at the database query level instead of after the batch size limit was already applied.
+
+= 2.0.2 =
+* Fixed images getting permanently stuck as "not yet processed" when W3 Total Cache's ImageService silently skips generating one intermediate size (e.g. Site Icon sizes registered only in certain admin contexts). The missing size is now regenerated from the already-converted full-size WebP instead of waiting forever for an event that never comes.
+* Added diagnostic logging (behind WP_DEBUG_LOG) explaining why an image was skipped during processing, to help diagnose batches that make no progress ("N images remaining" stuck at the same count).
 
 = 2.0.1 =
 * Tested up to WordPress 7.1 and W3 Total Cache 2.10.2.
