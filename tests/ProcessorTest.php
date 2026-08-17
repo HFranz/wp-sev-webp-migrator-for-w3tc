@@ -8,9 +8,10 @@ use SevWebPMigratorForW3TC\Processor;
 final class ProcessorTest extends TestCase {
 
 	private const NOOP_RESULT = array(
-		'posts_updated' => 0,
-		'migrated'      => false,
-		'files_deleted' => 0,
+		'posts_updated'   => 0,
+		'options_updated' => 0,
+		'migrated'        => false,
+		'files_deleted'   => 0,
 	);
 
 	private string $tmp_dir;

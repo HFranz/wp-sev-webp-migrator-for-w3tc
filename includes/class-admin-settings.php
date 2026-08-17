@@ -229,9 +229,10 @@ class Admin_Settings {
 		$delete_originals = (bool) get_option( self::OPTION_DELETE_ORIGINALS, false );
 		$attachment_ids    = $this->find_unprocessed( self::BATCH_SIZE );
 
-		$posts_updated = 0;
-		$files_deleted = 0;
-		$processed     = 0;
+		$posts_updated   = 0;
+		$options_updated = 0;
+		$files_deleted   = 0;
+		$processed       = 0;
 
 		foreach ( $attachment_ids as $attachment_id ) {
 			$result = $this->processor->process( $attachment_id, $delete_originals );
@@ -240,8 +241,9 @@ class Admin_Settings {
 				++$processed;
 			}
 
-			$posts_updated += $result['posts_updated'];
-			$files_deleted += $result['files_deleted'];
+			$posts_updated   += $result['posts_updated'];
+			$options_updated += $result['options_updated'];
+			$files_deleted   += $result['files_deleted'];
 		}
 
 		$redirect = add_query_arg(
@@ -249,6 +251,7 @@ class Admin_Settings {
 				'page'                 => self::PAGE_SLUG,
 				'sevwmfw3tc_processed' => $processed,
 				'sevwmfw3tc_posts'     => $posts_updated,
+				'sevwmfw3tc_options'   => $options_updated,
 				'sevwmfw3tc_files'     => $files_deleted,
 				// Lets render_notices() tell "nothing was left to do" apart from
 				// "found images but every one of them was skipped" (see Processor::log_skip()).
@@ -274,6 +277,7 @@ class Admin_Settings {
 
 		$processed = (int) $_GET['sevwmfw3tc_processed'];
 		$posts     = isset( $_GET['sevwmfw3tc_posts'] ) ? (int) $_GET['sevwmfw3tc_posts'] : 0;
+		$options   = isset( $_GET['sevwmfw3tc_options'] ) ? (int) $_GET['sevwmfw3tc_options'] : 0;
 		$files     = isset( $_GET['sevwmfw3tc_files'] ) ? (int) $_GET['sevwmfw3tc_files'] : 0;
 		$attempted = isset( $_GET['sevwmfw3tc_attempted'] ) ? (int) $_GET['sevwmfw3tc_attempted'] : 0;
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
@@ -282,10 +286,11 @@ class Admin_Settings {
 			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 			esc_html(
 				sprintf(
-					/* translators: 1: attachments processed, 2: posts updated, 3: files deleted. */
-					__( '%1$d image(s) processed, %2$d post(s) updated, %3$d source file(s) deleted.', 'sev-webp-migrator-for-w3tc' ),
+					/* translators: 1: attachments processed, 2: posts updated, 3: widget/theme-mod options updated, 4: files deleted. */
+					__( '%1$d image(s) processed, %2$d post(s) updated, %3$d widget/theme setting(s) updated, %4$d source file(s) deleted.', 'sev-webp-migrator-for-w3tc' ),
 					$processed,
 					$posts,
+					$options,
 					$files
 				)
 			)

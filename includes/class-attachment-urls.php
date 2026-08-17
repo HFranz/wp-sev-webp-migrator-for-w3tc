@@ -177,6 +177,52 @@ class Attachment_Urls {
 	}
 
 	/**
+	 * Builds the old/new string pairs to search and replace for one absolute
+	 * URL pair: the URL itself, its root-relative path, and its
+	 * protocol-relative form.
+	 *
+	 * Content authored by hand - a Customizer "Additional CSS" rule, a Custom
+	 * HTML widget, a theme mod - frequently omits the scheme and/or host
+	 * (e.g. `url(/wp-content/uploads/photo.jpg)`). Matching only the absolute
+	 * form would silently leave such references pointing at the original
+	 * file, which {@see Source_Cleaner::delete_originals()} would then delete
+	 * once the rest of the migration succeeded, breaking the image everywhere
+	 * that reference was used.
+	 *
+	 * @param string $old Old absolute URL.
+	 * @param string $new New absolute URL.
+	 * @return array<int, array{old: string, new: string}> Variant pairs, always including at least the absolute one.
+	 */
+	public static function url_variants( string $old, string $new ): array {
+		$pairs = array( array( 'old' => $old, 'new' => $new ) );
+
+		$old_parts = wp_parse_url( $old );
+		$new_parts = wp_parse_url( $new );
+
+		if ( ! is_array( $old_parts ) || ! is_array( $new_parts )
+			|| empty( $old_parts['host'] ) || empty( $new_parts['host'] )
+			|| empty( $old_parts['path'] ) || empty( $new_parts['path'] )
+		) {
+			return $pairs;
+		}
+
+		$old_path = $old_parts['path'] . ( isset( $old_parts['query'] ) ? '?' . $old_parts['query'] : '' );
+		$new_path = $new_parts['path'] . ( isset( $new_parts['query'] ) ? '?' . $new_parts['query'] : '' );
+
+		$pairs[] = array(
+			'old' => $old_path,
+			'new' => $new_path,
+		);
+
+		$pairs[] = array(
+			'old' => '//' . $old_parts['host'] . $old_path,
+			'new' => '//' . $new_parts['host'] . $new_path,
+		);
+
+		return $pairs;
+	}
+
+	/**
 	 * Resolves the full-size WebP file via W3TC's own "child attachment" record,
 	 * for when the predicted extension-swap path doesn't exist on disk.
 	 *

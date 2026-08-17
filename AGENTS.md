@@ -17,14 +17,21 @@ per Content-Filter vorzutäuschen (das macht das Schwester-Plugin `sev-rewrite-f
   `.webp`-Variante – einmal als URL (`url_pairs()`), einmal als Dateisystempfad (`path_pairs()`).
 - `includes/class-content-replacer.php` – `Content_Replacer::replace()`: sucht per `$wpdb`-LIKE-Query gezielt nach
   Posts, die eine alte URL enthalten, und ersetzt sie direkt in `post_content` (kein Hook auf `the_content`, echte
-  DB-Schreiboperation).
+  DB-Schreiboperation). Prüft jede URL in drei Formen (absolut, root-relativ, protokoll-relativ) via
+  `Attachment_Urls::url_variants()`, da z.B. „Zusätzliches CSS“ im Customizer oft root-relative Pfade enthält.
+- `includes/class-options-replacer.php` – `Options_Replacer::replace()`: dasselbe wie `Content_Replacer`, aber für
+  `wp_options`-Einträge mit Namen `widget_*` (Widget-Instanzen) und `theme_mods_*` (Customizer-Settings wie
+  Hintergrundbild). Diese Werte sind serialisiert, daher **kein** Roh-String-Replace auf der DB-Spalte (würde die
+  Serialisierung bei abweichender String-Länge korrumpieren) – stattdessen `get_option()`/`update_option()` mit
+  rekursivem Ersetzen im entpackten Wert.
 - `includes/class-attachment-migrator.php` – `Attachment_Migrator::migrate()`: aktualisiert das Attachment selbst
   (`_wp_attached_file`, `_wp_attachment_metadata`, `post_mime_type`), damit Mediathek/REST-API konsistent bleiben.
 - `includes/class-source-cleaner.php` – `Source_Cleaner::delete_originals()`: löscht die alten Dateien nur, wenn
   das `.webp`-Gegenstück nachweislich existiert und der Pfad innerhalb des Uploads-Verzeichnisses liegt.
 - `includes/class-processor.php` – `Processor::process()`: orchestriert obige Klassen für ein Attachment in der
-  Reihenfolge Content ersetzen → Attachment migrieren → optional Quelldateien löschen. `already_processed()` prüft
-  `post_mime_type === 'image/webp'` als Idempotenz-Marker (kein zusätzliches Postmeta nötig).
+  Reihenfolge Content ersetzen → Options (Widgets/Theme-Mods) ersetzen → Attachment migrieren → optional
+  Quelldateien löschen. `already_processed()` prüft `post_mime_type === 'image/webp'` als Idempotenz-Marker (kein
+  zusätzliches Postmeta nötig).
 - `includes/class-conversion-listener.php` – hookt `added_post_meta`/`updated_post_meta`, reagiert nur auf
   `meta_key === 'w3tc_imageservice'` mit `status === 'converted'` und ruft dann `Processor::process()` auf.
 - `includes/class-admin-settings.php` – Einstellungsseite unter **Settings → WebP Migrator for W3TC**: Checkbox

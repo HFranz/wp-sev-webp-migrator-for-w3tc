@@ -20,11 +20,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Processor {
 
 	private Content_Replacer $content_replacer;
+	private Options_Replacer $options_replacer;
 	private Attachment_Migrator $attachment_migrator;
 	private Source_Cleaner $source_cleaner;
 
 	public function __construct() {
 		$this->content_replacer    = new Content_Replacer();
+		$this->options_replacer    = new Options_Replacer();
 		$this->attachment_migrator = new Attachment_Migrator();
 		$this->source_cleaner      = new Source_Cleaner();
 	}
@@ -44,13 +46,14 @@ class Processor {
 	 *
 	 * @param int  $attachment_id    Attachment post ID.
 	 * @param bool $delete_originals Whether to delete the old-extension files afterwards.
-	 * @return array{posts_updated: int, migrated: bool, files_deleted: int} Result summary.
+	 * @return array{posts_updated: int, options_updated: int, migrated: bool, files_deleted: int} Result summary.
 	 */
 	public function process( int $attachment_id, bool $delete_originals ): array {
 		$result = array(
-			'posts_updated' => 0,
-			'migrated'      => false,
-			'files_deleted' => 0,
+			'posts_updated'   => 0,
+			'options_updated' => 0,
+			'migrated'        => false,
+			'files_deleted'   => 0,
 		);
 
 		if ( $this->already_processed( $attachment_id ) ) {
@@ -77,8 +80,9 @@ class Processor {
 			return $result;
 		}
 
-		$result['posts_updated'] = $this->content_replacer->replace( $url_pairs );
-		$result['migrated']      = $this->attachment_migrator->migrate( $attachment_id, $path_pairs );
+		$result['posts_updated']   = $this->content_replacer->replace( $url_pairs );
+		$result['options_updated'] = $this->options_replacer->replace( $url_pairs );
+		$result['migrated']        = $this->attachment_migrator->migrate( $attachment_id, $path_pairs );
 
 		if ( $delete_originals && $result['migrated'] ) {
 			$result['files_deleted'] = $this->source_cleaner->delete_originals( $path_pairs );

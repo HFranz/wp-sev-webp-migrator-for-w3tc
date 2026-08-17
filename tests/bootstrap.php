@@ -70,6 +70,10 @@ function trailingslashit( string $string ): string {
 	return rtrim( $string, '/\\' ) . '/';
 }
 
+function wp_parse_url( string $url ): array|false {
+	return parse_url( $url );
+}
+
 function wp_get_attachment_url( int $attachment_id ): string|false {
 	return WPTestStub::$attachment_urls[ $attachment_id ] ?? false;
 }
@@ -104,6 +108,11 @@ function get_option( string $option, mixed $default = false ): mixed {
 	return WPTestStub::$options[ $option ] ?? $default;
 }
 
+function update_option( string $option, mixed $value ): bool {
+	WPTestStub::$options[ $option ] = $value;
+	return true;
+}
+
 function clean_post_cache( int $post_id ): void {
 	WPTestStub::$cleaned_post_caches[] = $post_id;
 }
@@ -134,6 +143,8 @@ class Fake_Wpdb {
 
 	public string $posts = 'wp_posts';
 
+	public string $options = 'wp_options';
+
 	/** @var array<int, string> post_id => post_content */
 	public array $post_content = array();
 
@@ -142,12 +153,16 @@ class Fake_Wpdb {
 
 	private string $pending_like = '';
 
+	/** @var array<int, mixed> All args passed to the most recent prepare() call. */
+	private array $pending_args = array();
+
 	public function esc_like( string $text ): string {
 		return addcslashes( $text, '_%\\' );
 	}
 
 	public function prepare( string $query, mixed ...$args ): string {
 		$this->pending_like = (string) ( $args[0] ?? '' );
+		$this->pending_args = $args;
 		return $query;
 	}
 
@@ -162,6 +177,30 @@ class Fake_Wpdb {
 					'ID'           => $id,
 					'post_content' => $content,
 				);
+			}
+		}
+
+		return $matches;
+	}
+
+	/**
+	 * Matches Options_Replacer::matching_option_names()'s query shape: returns
+	 * every WPTestStub::$options key whose name starts with one of the most
+	 * recent prepare() call's LIKE patterns (with their esc_like() escaping
+	 * undone), same as a real "option_name LIKE 'prefix%'" would.
+	 *
+	 * @return string[]
+	 */
+	public function get_col( string $query ): array {
+		$matches = array();
+
+		foreach ( array_keys( WPTestStub::$options ) as $name ) {
+			foreach ( $this->pending_args as $pattern ) {
+				$needle = stripslashes( rtrim( (string) $pattern, '%' ) );
+				if ( '' !== $needle && str_starts_with( $name, $needle ) ) {
+					$matches[] = $name;
+					continue 2;
+				}
 			}
 		}
 
@@ -236,6 +275,7 @@ const W3TC = true;
 
 require_once dirname( __DIR__ ) . '/includes/class-attachment-urls.php';
 require_once dirname( __DIR__ ) . '/includes/class-content-replacer.php';
+require_once dirname( __DIR__ ) . '/includes/class-options-replacer.php';
 
 // Attachment_Migrator and Source_Cleaner touch the real filesystem/$wpdb schema in
 // ways that aren't meaningfully stubbable here, so their own methods are not
