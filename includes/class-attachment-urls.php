@@ -141,10 +141,28 @@ class Attachment_Urls {
 	/**
 	 * Swaps a convertible image extension (jpg/jpeg/png/gif) for .webp.
 	 *
+	 * Idempotent for inputs that already end in ".webp": an attachment's
+	 * `_wp_attached_file` can end up already pointing at the .webp file while
+	 * `post_mime_type` was never updated to match (e.g. an interrupted
+	 * earlier migration) - already_processed() only checks post_mime_type,
+	 * so such an attachment keeps surfacing as "unprocessed" forever, but the
+	 * old, non-idempotent version of this method returned null for it (its
+	 * "old" URL/path already looks like the "new" one), leaving Processor
+	 * nothing to build a pair from and no way to ever reach
+	 * Attachment_Migrator::migrate() to fix the mismatch. Returning the
+	 * input unchanged instead lets it flow through the same pair (old === new)
+	 * and the existing resolve_webp_case()/migrate() pipeline, which corrects
+	 * the stale post_mime_type as a side effect once every size is confirmed
+	 * to already be .webp on disk.
+	 *
 	 * @param string $path_or_url Filesystem path or URL.
-	 * @return string|null The .webp variant, or null if the extension is not convertible.
+	 * @return string|null The .webp variant (unchanged if already .webp), or null if the extension is not convertible.
 	 */
 	private static function to_webp( string $path_or_url ): ?string {
+		if ( preg_match( '/\.webp$/i', $path_or_url ) ) {
+			return $path_or_url;
+		}
+
 		if ( ! preg_match( self::CONVERTIBLE_EXTENSION, $path_or_url ) ) {
 			return null;
 		}

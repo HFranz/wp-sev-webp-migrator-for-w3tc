@@ -4,7 +4,7 @@ Tags: webp, images, w3-total-cache, performance, optimization
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.0.8
+Stable tag: 2.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -82,6 +82,9 @@ screenshot-2.png
 screenshot-3.png
 
 == Changelog ==
+
+= 2.0.9 =
+* Fixed attachments getting permanently stuck when their attached file was already renamed to .webp (e.g. from an interrupted earlier migration) but `post_mime_type` was never updated to match, so the plugin kept treating them as unconverted while being unable to build a rewrite pair for an already-.webp URL. Such attachments are now recognized and their mime type/metadata is corrected.
 
 = 2.0.8 =
 * Improved the diagnostic log message for attachments skipped because no usable URL/extension was found, to distinguish `wp_get_attachment_url()` returning nothing at all from it returning a URL whose extension isn't recognised as convertible - these point at different underlying problems and the previous single generic message didn't say which one applied.

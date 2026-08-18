@@ -65,10 +65,46 @@ final class AttachmentUrlsTest extends TestCase {
 		}
 	}
 
-	public function test_url_pairs_ignores_already_webp_or_unsupported_extensions(): void {
+	public function test_url_pairs_ignores_unsupported_extensions(): void {
 		WPTestStub::$attachment_urls[ 7 ] = 'http://example.com/wp-content/uploads/document.pdf';
 
 		$this->assertSame( array(), Attachment_Urls::url_pairs( 7 ) );
+	}
+
+	/**
+	 * Reproduces the reported bug: an attachment whose `_wp_attached_file`
+	 * already points at the .webp file (e.g. an interrupted earlier
+	 * migration left the file renamed but post_mime_type stale) must still
+	 * produce a pair for the full size - as an old===new identity pair -
+	 * rather than an empty array. Processor::already_processed() only checks
+	 * post_mime_type, so an empty array here would leave such an attachment
+	 * permanently unable to reach Attachment_Migrator::migrate(), which is
+	 * what actually corrects the stale mime type.
+	 */
+	public function test_url_pairs_treats_an_already_webp_full_size_as_an_identity_pair(): void {
+		WPTestStub::$attachment_urls[ 8 ]     = 'http://example.com/wp-content/uploads/photo-scaled.webp';
+		WPTestStub::$attachment_metadata[ 8 ] = array(
+			'file'  => 'photo-scaled.webp',
+			'sizes' => array(
+				'medium' => array( 'file' => 'photo-300x200.jpg' ),
+			),
+		);
+
+		$pairs = Attachment_Urls::url_pairs( 8 );
+
+		$this->assertSame(
+			array(
+				array(
+					'old' => 'http://example.com/wp-content/uploads/photo-scaled.webp',
+					'new' => 'http://example.com/wp-content/uploads/photo-scaled.webp',
+				),
+				array(
+					'old' => 'http://example.com/wp-content/uploads/photo-300x200.jpg',
+					'new' => 'http://example.com/wp-content/uploads/photo-300x200.webp',
+				),
+			),
+			$pairs
+		);
 	}
 
 	public function test_url_pairs_returns_empty_when_attachment_has_no_url(): void {
