@@ -62,7 +62,18 @@ class Processor {
 
 		$url_pairs = Attachment_Urls::url_pairs( $attachment_id );
 		if ( empty( $url_pairs ) ) {
-			$this->log_skip( $attachment_id, 'no attachment URL or convertible file extension found' );
+			// Distinguish the two ways this can happen: wp_get_attachment_url()
+			// returning nothing at all (unusual - even a broken _wp_attached_file
+			// falls back to the post's guid) versus returning a URL whose
+			// extension Attachment_Urls doesn't recognise as convertible, which
+			// points at very different underlying problems.
+			$attachment_url = wp_get_attachment_url( $attachment_id );
+			$this->log_skip(
+				$attachment_id,
+				$attachment_url
+					? "attachment URL has no convertible (jpg/jpeg/png/gif) extension: {$attachment_url}"
+					: 'wp_get_attachment_url() returned nothing for this attachment'
+			);
 			return $result;
 		}
 
