@@ -285,5 +285,6 @@ require_once dirname( __DIR__ ) . '/includes/class-options-replacer.php';
 require_once dirname( __DIR__ ) . '/includes/class-attachment-migrator.php';
 require_once dirname( __DIR__ ) . '/includes/class-source-cleaner.php';
 require_once dirname( __DIR__ ) . '/includes/class-processor.php';
+require_once dirname( __DIR__ ) . '/includes/class-save-listener.php';
 
 do_action( 'plugins_loaded' );

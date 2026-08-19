@@ -3,7 +3,7 @@
  * Plugin Name: SEV WebP Migrator for W3TC
  * Plugin URI: https://github.com/HFranz/wp-sev-webp-migrator-for-w3tc
  * Description: Replaces image URLs with their WebP versions once W3 Total Cache ImageService converts them, with optional deletion of the originals.
- * Version: 2.0.9
+ * Version: 2.1.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Heinrich Franz
@@ -21,12 +21,13 @@
 use SevWebPMigratorForW3TC\Admin_Settings;
 use SevWebPMigratorForW3TC\Conversion_Listener;
 use SevWebPMigratorForW3TC\Processor;
+use SevWebPMigratorForW3TC\Save_Listener;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die();
 }
 
-const SEVWMFW3TC_VERSION = '2.0.9';
+const SEVWMFW3TC_VERSION = '2.1.0';
 
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-attachment-urls.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-content-replacer.php';
@@ -35,6 +36,7 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/class-attachment-migrator.p
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-source-cleaner.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-processor.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-conversion-listener.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-save-listener.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-admin-settings.php';
 
 /**
@@ -53,6 +55,8 @@ add_action(
 		$conversion_listener = new Conversion_Listener( $processor );
 		add_action( 'added_post_meta', array( $conversion_listener, 'on_meta_write' ), 10, 4 );
 		add_action( 'updated_post_meta', array( $conversion_listener, 'on_meta_write' ), 10, 4 );
+
+		( new Save_Listener() )->register();
 
 		if ( is_admin() ) {
 			( new Admin_Settings( $processor ) )->register();

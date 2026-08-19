@@ -34,6 +34,12 @@ per Content-Filter vorzutäuschen.
   zusätzliches Postmeta nötig).
 - `includes/class-conversion-listener.php` – hookt `added_post_meta`/`updated_post_meta`, reagiert nur auf
   `meta_key === 'w3tc_imageservice'` mit `status === 'converted'` und ruft dann `Processor::process()` auf.
+- `includes/class-save-listener.php` – `Save_Listener`: hookt `content_save_pre`, schließt eine Race Condition
+  (Bild wird im Editor eingefügt, während W3TC es im Hintergrund fertig konvertiert und das Attachment schon
+  `image/webp` markiert, *bevor* der Beitrag gespeichert wird – `Content_Replacer` findet dann beim Konvertierungs-
+  Event nichts zu ersetzen, und danach greift `already_processed()`, sodass die Referenz nie mehr korrigiert würde).
+  Korrigiert dazu gezielt nur `<img class="wp-image-{ID}">`-Tags bereits migrierter Attachments beim Speichern,
+  ohne DB-Scan über alle Posts.
 - `includes/class-admin-settings.php` – Einstellungsseite unter **Settings → WebP Migrator for W3TC**: Checkbox
   „Quellbilder löschen“ (Option `sevwmfw3tc_delete_originals`, Default aus) sowie ein manueller Batch-Trigger
   (`admin-post.php?action=sevwmfw3tc_process_batch`) für Bilder, die W3TC vor Plugin-Aktivierung konvertiert hat.
