@@ -4,7 +4,7 @@ Tags: webp, images, w3-total-cache, performance, optimization
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -90,10 +90,10 @@ screenshot-3.png
 
 == Changelog ==
 
-= 2.2.0 =
+= 2.3.0 =
 * Fixed Save_Listener (added in 2.1.0) rewriting an intermediate size's `<img>` reference to a URL that doesn't exist for attachments WordPress itself auto-scaled on upload: W3TC names those intermediate WebP files after the "-scaled" full file, not after the size's own pre-scale filename, so a blind extension swap produced the wrong filename. It now resolves each size against the attachment's own already-migrated metadata (matched by width×height) instead of guessing.
 
-= 2.1.1 =
+= 2.2.0 =
 * Fixed a newly-uploaded image showing as a broken image inside the block editor when it finished converting (and, with "Delete source images" enabled, had its original deleted) within moments of being inserted — the browser was still rendering it from the original URL. Deletion of an attachment's original files is now deferred for a short grace period (15 minutes by default, filterable via `sevwmfw3tc_deletion_grace_period`) after upload, and retried automatically once it has passed.
 
 = 2.1.0 =
