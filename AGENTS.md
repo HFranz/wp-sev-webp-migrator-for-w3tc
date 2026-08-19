@@ -8,7 +8,7 @@
 ## Zweck & Architektur
 Dieses WordPress-Plugin ergänzt **W3 Total Cache (W3TC)**: Sobald W3TC ImageService ein Bild erfolgreich zu WebP
 konvertiert hat, schreibt dieses Plugin die Umstellung **dauerhaft in die Datenbank**, statt sie nur zur Laufzeit
-per Content-Filter vorzutäuschen (das macht das Schwester-Plugin `sev-rewrite-free-webp-for-w3tc`).
+per Content-Filter vorzutäuschen.
 
 - `sev-webp-migrator-for-w3tc.php` – Bootstrap. Hookt sich nur ein, wenn `defined('W3TC')` (Laufzeit-Check statt
   `Requires Plugins`, wichtig für mu-plugins) via `plugins_loaded`.
@@ -59,8 +59,8 @@ Quellbilder ist standardmäßig deaktiviert und unwiderruflich.
   Uploads-Verzeichnis-Zugehörigkeit, bevor eine Originaldatei angefasst wird.
 
 ## Tests (kein WP-Testsuite/wp-env!)
-- `tests/bootstrap.php` definiert eigene, minimale Stubs für WP-Funktionen (nach demselben Muster wie im
-  Schwester-Plugin `sev-rewrite-free-webp-for-w3tc`), lädt dann das echte Plugin und feuert `plugins_loaded`.
+- `tests/bootstrap.php` definiert eigene, minimale Stubs für WP-Funktionen, lädt dann das echte Plugin und feuert
+  `plugins_loaded`.
 - Getestet wird primär reine Logik ohne Dateisystem-/DB-Interaktion: `Attachment_Urls` (URL-/Pfad-Paarbildung,
   Endungs-Erkennung) sowie `Content_Replacer` über einen minimalen In-Memory-`$wpdb`-Stub.
 - `Attachment_Migrator` und `Source_Cleaner` greifen auf echtes Dateisystem/`$wpdb` zu und werden **nicht** durch

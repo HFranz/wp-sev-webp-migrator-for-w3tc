@@ -64,10 +64,6 @@ Deleting source images is permanent and cannot be undone by this plugin. Keep ba
 
 No. Image conversion is handled entirely by W3 Total Cache ImageService. This plugin only replaces already-converted images' URLs, permanently, in post content and in the attachment's own record.
 
-= How is this different from "SEV Rewrite-Free WebP for W3TC"? =
-
-The rewrite-free plugin swaps URLs on the fly for browsers that support WebP, leaving the original content and files untouched. This plugin instead permanently replaces the stored content and, optionally, removes the original files — useful once you no longer need to serve the original format to any visitor.
-
 = Is deleting source images safe? =
 
 A source file is only deleted once its `.webp` counterpart has been confirmed to exist on disk, after post content and the attachment record have already been updated. Deletion is still permanent and disabled by default — enable it deliberately, and keep backups.
