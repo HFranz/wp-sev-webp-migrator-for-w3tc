@@ -19,6 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Processor {
 
+	/** Hook used to retry a deferred original-file deletion; see {@see self::handle_deferred_deletion()}. */
+	public const DEFERRED_DELETION_HOOK = 'sevwmfw3tc_deferred_deletion';
+
 	private Content_Replacer $content_replacer;
 	private Options_Replacer $options_replacer;
 	private Attachment_Migrator $attachment_migrator;
@@ -96,10 +99,98 @@ class Processor {
 		$result['migrated']        = $this->attachment_migrator->migrate( $attachment_id, $path_pairs );
 
 		if ( $delete_originals && $result['migrated'] ) {
-			$result['files_deleted'] = $this->source_cleaner->delete_originals( $path_pairs );
+			if ( $this->uploaded_too_recently_to_delete( $attachment_id ) ) {
+				// The original was likely just inserted into a post being
+				// edited (e.g. via the block editor's media dialog) and the
+				// browser may still be rendering it from that now-stale URL:
+				// deleting it out from under an active edit session shows up
+				// there as a broken image, even though Save_Listener will
+				// correct the saved reference once the post is actually
+				// saved. Deferring avoids that window instead of only fixing
+				// it after the fact. already_processed() will block any
+				// further Processor::process() run for this attachment once
+				// migrate() above succeeds, so retrying only the deletion
+				// step needs its own scheduled event rather than relying on
+				// a future normal run to pick it back up.
+				$this->schedule_deferred_deletion( $attachment_id, $path_pairs );
+			} else {
+				$result['files_deleted'] = $this->source_cleaner->delete_originals( $path_pairs );
+			}
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Retries an original-file deletion that {@see self::process()} deferred
+	 * because the attachment had just been uploaded. Safe to call once the
+	 * grace period has passed regardless of what changed on disk in the
+	 * meantime: {@see Source_Cleaner::delete_originals()} re-checks that both
+	 * the original and its `.webp` counterpart still exist before touching
+	 * anything.
+	 *
+	 * @param int                                            $attachment_id Attachment post ID (unused directly, kept for context/logging parity with process()).
+	 * @param array<int, array{old: string, new: string}>    $path_pairs    The same path pairs process() had already resolved.
+	 * @return void
+	 */
+	public function handle_deferred_deletion( int $attachment_id, array $path_pairs ): void {
+		$deleted = $this->source_cleaner->delete_originals( $path_pairs );
+
+		$this->log_skip( $attachment_id, "deferred deletion retried, {$deleted} file(s) deleted" );
+	}
+
+	/**
+	 * Whether this attachment was uploaded too recently for its originals to
+	 * be safely deleted yet. Filterable via `sevwmfw3tc_deletion_grace_period`
+	 * (seconds; default 15 minutes).
+	 *
+	 * @param int $attachment_id Attachment post ID.
+	 * @return bool
+	 */
+	private function uploaded_too_recently_to_delete( int $attachment_id ): bool {
+		$post = get_post( $attachment_id );
+		if ( ! $post || empty( $post->post_date_gmt ) ) {
+			return false;
+		}
+
+		$uploaded_at = strtotime( $post->post_date_gmt . ' UTC' );
+		if ( false === $uploaded_at ) {
+			return false;
+		}
+
+		/**
+		 * Filters how long (in seconds) after upload an attachment's original
+		 * files are protected from deletion, to avoid racing an active edit
+		 * session that may still be rendering the image from its old URL.
+		 *
+		 * @param int $grace_period Seconds. Default 15 minutes.
+		 */
+		$grace_period = (int) apply_filters( 'sevwmfw3tc_deletion_grace_period', 15 * MINUTE_IN_SECONDS );
+
+		return ( time() - $uploaded_at ) < $grace_period;
+	}
+
+	/**
+	 * Schedules a one-off retry of {@see self::handle_deferred_deletion()}
+	 * once the grace period has passed. A no-op if one is already scheduled
+	 * for this exact attachment/path-pairs combination.
+	 *
+	 * @param int                                            $attachment_id Attachment post ID.
+	 * @param array<int, array{old: string, new: string}>    $path_pairs    Resolved path pairs to retry deletion with.
+	 * @return void
+	 */
+	private function schedule_deferred_deletion( int $attachment_id, array $path_pairs ): void {
+		$args = array( $attachment_id, $path_pairs );
+
+		if ( wp_next_scheduled( self::DEFERRED_DELETION_HOOK, $args ) ) {
+			return;
+		}
+
+		$grace_period = (int) apply_filters( 'sevwmfw3tc_deletion_grace_period', 15 * MINUTE_IN_SECONDS );
+
+		wp_schedule_single_event( time() + $grace_period, self::DEFERRED_DELETION_HOOK, $args );
+
+		$this->log_skip( $attachment_id, "deletion of original file(s) deferred, attachment was uploaded too recently ({$grace_period}s grace period)" );
 	}
 
 	/**

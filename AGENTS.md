@@ -31,7 +31,11 @@ per Content-Filter vorzutäuschen.
 - `includes/class-processor.php` – `Processor::process()`: orchestriert obige Klassen für ein Attachment in der
   Reihenfolge Content ersetzen → Options (Widgets/Theme-Mods) ersetzen → Attachment migrieren → optional
   Quelldateien löschen. `already_processed()` prüft `post_mime_type === 'image/webp'` als Idempotenz-Marker (kein
-  zusätzliches Postmeta nötig).
+  zusätzliches Postmeta nötig). Ist das Attachment jünger als die Gnadenfrist (Filter
+  `sevwmfw3tc_deletion_grace_period`, Standard 15 Minuten), wird das Löschen der Originaldateien statt sofort per
+  `wp_schedule_single_event()` auf `Processor::DEFERRED_DELETION_HOOK` verschoben (siehe `handle_deferred_deletion()`)
+  – verhindert, dass ein frisch hochgeladenes, gerade im Editor eingefügtes Bild als kaputt angezeigt wird, während
+  der Browser es noch von der alten URL lädt.
 - `includes/class-conversion-listener.php` – hookt `added_post_meta`/`updated_post_meta`, reagiert nur auf
   `meta_key === 'w3tc_imageservice'` mit `status === 'converted'` und ruft dann `Processor::process()` auf.
 - `includes/class-save-listener.php` – `Save_Listener`: hookt `content_save_pre`, schließt eine Race Condition
@@ -39,7 +43,9 @@ per Content-Filter vorzutäuschen.
   `image/webp` markiert, *bevor* der Beitrag gespeichert wird – `Content_Replacer` findet dann beim Konvertierungs-
   Event nichts zu ersetzen, und danach greift `already_processed()`, sodass die Referenz nie mehr korrigiert würde).
   Korrigiert dazu gezielt nur `<img class="wp-image-{ID}">`-Tags bereits migrierter Attachments beim Speichern,
-  ohne DB-Scan über alle Posts.
+  ohne DB-Scan über alle Posts. Löst jede gefundene URL über die **bereits migrierten** Metadaten des Attachments
+  auf (Breite×Höhe → aktuelle Datei), statt die Endung naiv zu tauschen – ein blinder Tausch wäre bei per
+  `-scaled`-Konvention benannten Zwischengrößen (siehe `Attachment_Urls::to_webp_for_size()`) falsch.
 - `includes/class-admin-settings.php` – Einstellungsseite unter **Settings → WebP Migrator for W3TC**: Checkbox
   „Quellbilder löschen“ (Option `sevwmfw3tc_delete_originals`, Default aus) sowie ein manueller Batch-Trigger
   (`admin-post.php?action=sevwmfw3tc_process_batch`) für Bilder, die W3TC vor Plugin-Aktivierung konvertiert hat.

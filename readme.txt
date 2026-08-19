@@ -4,7 +4,7 @@ Tags: webp, images, w3-total-cache, performance, optimization
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,7 @@ This is an independent, unofficial add-on and is not affiliated with, endorsed b
 * Manual "process now" tool in **Settings → WebP Migrator for W3TC** for images that were converted before this plugin was active.
 * Diagnostic logging (behind `WP_DEBUG_LOG`) explains exactly why an image was skipped, to help troubleshoot a batch that makes no progress.
 * Also corrects an image reference at the moment a post is saved, for the rare case where the image was inserted while still being converted in the background.
+* Deletion of a freshly-uploaded image's original files is deferred for a short grace period after upload, so it isn't pulled out from under an editor session that might still be rendering it from the original URL.
 
 **How it works**
 
@@ -76,7 +77,7 @@ Widget instances (e.g. a Custom HTML/Text widget) and theme mod settings (e.g. a
 
 = Is deleting source images safe? =
 
-A source file is only deleted once its `.webp` counterpart has been confirmed to exist on disk, after post content, widgets, theme mods, and the attachment record have already been updated. Deletion is still permanent and disabled by default — enable it deliberately, and keep backups.
+A source file is only deleted once its `.webp` counterpart has been confirmed to exist on disk, after post content, widgets, theme mods, and the attachment record have already been updated. For a freshly-uploaded image, deletion is additionally deferred for a short grace period (15 minutes by default) to avoid interfering with an active editing session. Deletion is still permanent and disabled by default — enable it deliberately, and keep backups.
 
 = Does it work with WordPress Multisite installations? =
 
@@ -88,6 +89,12 @@ screenshot-2.png
 screenshot-3.png
 
 == Changelog ==
+
+= 2.2.0 =
+* Fixed Save_Listener (added in 2.1.0) rewriting an intermediate size's `<img>` reference to a URL that doesn't exist for attachments WordPress itself auto-scaled on upload: W3TC names those intermediate WebP files after the "-scaled" full file, not after the size's own pre-scale filename, so a blind extension swap produced the wrong filename. It now resolves each size against the attachment's own already-migrated metadata (matched by width×height) instead of guessing.
+
+= 2.1.1 =
+* Fixed a newly-uploaded image showing as a broken image inside the block editor when it finished converting (and, with "Delete source images" enabled, had its original deleted) within moments of being inserted — the browser was still rendering it from the original URL. Deletion of an attachment's original files is now deferred for a short grace period (15 minutes by default, filterable via `sevwmfw3tc_deletion_grace_period`) after upload, and retried automatically once it has passed.
 
 = 2.1.0 =
 * Fixed a timing gap where an image inserted into a post being edited (not yet saved) while W3 Total Cache finished converting it in the background would never have that reference corrected: the attachment was already marked as converted by the time the post was saved, so neither the automatic listener nor the manual batch tool would revisit it. Post content is now also corrected at save time for `<img>` tags referencing an already-converted attachment.

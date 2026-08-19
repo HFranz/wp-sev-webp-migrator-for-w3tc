@@ -42,15 +42,6 @@ class Save_Listener {
 	private const WP_IMAGE_CLASS = '/\bwp-image-(\d+)\b/i';
 
 	/**
-	 * Matches a convertible extension only where it ends a URL (before a quote,
-	 * whitespace, or the tag's closing bracket). `content_save_pre` receives
-	 * content already escaped for the database (WordPress slashes it before
-	 * running save_pre filters), so a quote in the original markup arrives
-	 * here as `\"`/`\'` - the optional backslashes account for that.
-	 */
-	private const CONVERTIBLE_EXTENSION = '/\.(jpe?g|png|gif)(?=\\\\*["\'\s>])/i';
-
-	/**
 	 * Registers the `content_save_pre` filter. Call once during `plugins_loaded`.
 	 *
 	 * @return void
@@ -97,10 +88,86 @@ class Save_Listener {
 			return $tag;
 		}
 
-		$rewritten = preg_replace( self::CONVERTIBLE_EXTENSION, '.webp', $tag );
+		$full_url = wp_get_attachment_url( $attachment_id );
+		if ( ! is_string( $full_url ) || '' === $full_url ) {
+			$this->log( "attachment #{$attachment_id} is image/webp but wp_get_attachment_url() returned nothing, not rewritten" );
+			return $tag;
+		}
+
+		$rewritten = $this->rewrite_urls_for_attachment( $tag, $full_url, $this->sizes_by_dimensions( $attachment_id, $full_url ) );
 		$this->log( "attachment #{$attachment_id} is image/webp, rewrote tag: {$tag} -> {$rewritten}" );
 
 		return $rewritten;
+	}
+
+	/**
+	 * Replaces every URL inside the tag that lives in this attachment's own
+	 * upload directory and ends in a convertible extension, resolving each
+	 * one to its *actual* current WebP counterpart rather than guessing via a
+	 * blind extension swap.
+	 *
+	 * A blind swap ("photo-1024x549.png" -> "photo-1024x549.webp") is wrong
+	 * for an intermediate size of an attachment WordPress itself auto-scaled
+	 * on upload: W3TC names those after the "-scaled" full file (e.g.
+	 * "photo-scaled-1024x549.webp"), not after the size's own filename (see
+	 * {@see Attachment_Urls::to_webp_for_size()}, which this mirrors using
+	 * the attachment's own already-migrated metadata as the source of truth
+	 * instead of re-deriving the naming convention here).
+	 *
+	 * @param string                $tag           The <img> tag being rewritten.
+	 * @param string                $full_url      This attachment's current (already-migrated) full-size URL.
+	 * @param array<string, string> $sizes         "{width}x{height}" => current WebP URL, from {@see self::sizes_by_dimensions()}.
+	 * @return string
+	 */
+	private function rewrite_urls_for_attachment( string $tag, string $full_url, array $sizes ): string {
+		$base_dir = trailingslashit( dirname( $full_url ) );
+		$pattern  = '/' . preg_quote( $base_dir, '/' ) . '[^\s"\'<>]*?(?:-(?P<dimensions>\d+x\d+))?\.(?:jpe?g|png|gif|webp)(?=\\\\*["\'\s>])/i';
+
+		return preg_replace_callback(
+			$pattern,
+			static function ( array $url_matches ) use ( $full_url, $sizes ) {
+				$dimensions = $url_matches['dimensions'] ?? '';
+
+				if ( '' === $dimensions ) {
+					return $full_url;
+				}
+
+				// Unrecognised size: leave it untouched rather than guess wrong.
+				return $sizes[ $dimensions ] ?? $url_matches[0];
+			},
+			$tag
+		);
+	}
+
+	/**
+	 * Maps each of this attachment's registered intermediate sizes to its
+	 * current WebP URL, keyed by "{width}x{height}" so a URL found in the
+	 * tag can be resolved by the dimensions in its filename regardless of
+	 * what base filename W3TC actually gave it.
+	 *
+	 * @param int    $attachment_id Attachment post ID.
+	 * @param string $full_url      This attachment's current full-size URL.
+	 * @return array<string, string>
+	 */
+	private function sizes_by_dimensions( int $attachment_id, string $full_url ): array {
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+		$result   = array();
+
+		if ( ! is_array( $metadata ) || empty( $metadata['sizes'] ) || ! is_array( $metadata['sizes'] ) ) {
+			return $result;
+		}
+
+		$base_dir = trailingslashit( dirname( $full_url ) );
+
+		foreach ( $metadata['sizes'] as $size ) {
+			if ( empty( $size['file'] ) || ! is_string( $size['file'] ) || ! isset( $size['width'], $size['height'] ) ) {
+				continue;
+			}
+
+			$result[ $size['width'] . 'x' . $size['height'] ] = $base_dir . $size['file'];
+		}
+
+		return $result;
 	}
 
 	/**

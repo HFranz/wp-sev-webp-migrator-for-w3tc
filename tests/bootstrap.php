@@ -12,6 +12,8 @@ declare( strict_types=1 );
  */
 
 define( 'ABSPATH', dirname( __DIR__, 3 ) . '/' );
+define( 'MINUTE_IN_SECONDS', 60 );
+define( 'HOUR_IN_SECONDS', 60 * MINUTE_IN_SECONDS );
 
 // ---------------------------------------------------------------------------
 // Simple filter/action system
@@ -26,6 +28,16 @@ function add_filter( string $tag, callable $callback, int $priority = 10, int $a
 
 function add_action( string $tag, callable $callback, int $priority = 10, int $accepted_args = 1 ): bool {
 	$GLOBALS['wp_filter'][ $tag ][ $priority ][] = $callback;
+	return true;
+}
+
+function remove_filter( string $tag, callable $callback, int $priority = 10 ): bool {
+	if ( isset( $GLOBALS['wp_filter'][ $tag ][ $priority ] ) ) {
+		$GLOBALS['wp_filter'][ $tag ][ $priority ] = array_filter(
+			$GLOBALS['wp_filter'][ $tag ][ $priority ],
+			static fn ( $existing ) => $existing !== $callback
+		);
+	}
 	return true;
 }
 
@@ -110,6 +122,28 @@ function get_option( string $option, mixed $default = false ): mixed {
 
 function update_option( string $option, mixed $value ): bool {
 	WPTestStub::$options[ $option ] = $value;
+	return true;
+}
+
+function get_post( int $post_id ): object|null {
+	return WPTestStub::$posts[ $post_id ] ?? null;
+}
+
+function wp_next_scheduled( string $hook, array $args = array() ): int|false {
+	foreach ( WPTestStub::$scheduled_events as $event ) {
+		if ( $event['hook'] === $hook && $event['args'] === $args ) {
+			return $event['timestamp'];
+		}
+	}
+	return false;
+}
+
+function wp_schedule_single_event( int $timestamp, string $hook, array $args = array() ): bool {
+	WPTestStub::$scheduled_events[] = array(
+		'timestamp' => $timestamp,
+		'hook'      => $hook,
+		'args'      => $args,
+	);
 	return true;
 }
 
@@ -252,6 +286,12 @@ class WPTestStub {
 	/** @var (callable(string, int): void)|null Optional side effect run by the wp_create_image_subsizes() stub. */
 	public static $create_image_subsizes_side_effect = null;
 
+	/** @var array<int, object{ID: int, post_date_gmt: string}> post_id => get_post()-shaped object. */
+	public static array $posts = array();
+
+	/** @var array<int, array{timestamp: int, hook: string, args: array}> Calls recorded by the wp_schedule_single_event() stub. */
+	public static array $scheduled_events = array();
+
 	/** Resets all mock data (without clearing registered filters/actions). */
 	public static function reset(): void {
 		self::$attachment_urls                    = array();
@@ -263,6 +303,8 @@ class WPTestStub {
 		self::$cleaned_post_caches                = array();
 		self::$image_subsizes_calls               = array();
 		self::$create_image_subsizes_side_effect  = null;
+		self::$posts                              = array();
+		self::$scheduled_events                   = array();
 	}
 }
 
