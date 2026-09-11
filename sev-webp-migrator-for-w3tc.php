@@ -3,7 +3,7 @@
  * Plugin Name: SEV WebP Migrator for W3TC
  * Plugin URI: https://github.com/HFranz/wp-sev-webp-migrator-for-w3tc
  * Description: Replaces image URLs with their WebP versions once W3 Total Cache ImageService converts them, with optional deletion of the originals.
- * Version: 2.3.0
+ * Version: 2.4.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Heinrich Franz
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	die();
 }
 
-const SEVWMFW3TC_VERSION = '2.3.0';
+const SEVWMFW3TC_VERSION = '2.4.0';
 
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-attachment-urls.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-content-replacer.php';
@@ -65,3 +65,23 @@ add_action(
 		}
 	}
 );
+
+/**
+ * Adds "Support" and star-rating links to the plugin's row on the Plugins
+ * list page, pointing at its WordPress.org listing.
+ *
+ * @param array<int, string> $links Existing row meta links.
+ * @param string             $file  Plugin basename of the plugin the row meta is for.
+ * @return array<int, string>
+ */
+function sevwmfw3tc_plugin_row_meta( array $links, string $file ): array {
+	if ( plugin_basename( __FILE__ ) !== $file ) {
+		return $links;
+	}
+
+	$links[] = '<a href="' . esc_url( 'https://wordpress.org/support/plugin/sev-webp-migrator-for-w3tc/reviews/#new-post' ) . '" target="_blank" rel="noopener noreferrer" style="color:#ffb900;font-size:20px;text-decoration:none;">★★★★★</a>';
+	$links[] = '<a href="' . esc_url( 'https://wordpress.org/support/plugin/sev-webp-migrator-for-w3tc/' ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Support', 'sev-webp-migrator-for-w3tc' ) . '</a>';
+
+	return $links;
+}
+add_filter( 'plugin_row_meta', 'sevwmfw3tc_plugin_row_meta', 10, 2 );

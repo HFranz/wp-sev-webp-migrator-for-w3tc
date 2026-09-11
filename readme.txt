@@ -4,7 +4,7 @@ Tags: webp, images, w3-total-cache, performance, optimization
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.0
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -89,6 +89,9 @@ screenshot-2.png
 screenshot-3.png
 
 == Changelog ==
+
+= 2.4.0 =
+* Added a "Support" and a star-rating link to the plugin's row on the Plugins list page.
 
 = 2.3.0 =
 * Fixed Save_Listener (added in 2.1.0) rewriting an intermediate size's `<img>` reference to a URL that doesn't exist for attachments WordPress itself auto-scaled on upload: W3TC names those intermediate WebP files after the "-scaled" full file, not after the size's own pre-scale filename, so a blind extension swap produced the wrong filename. It now resolves each size against the attachment's own already-migrated metadata (matched by width×height) instead of guessing.
