@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Adds the "Settings → SEV WebP Migrator for W3TC" admin page with the
+ * Adds the "Settings → WebP Migrator for W3TC" admin page with the
  * "delete original images" option.
  *
  * Also adds a manual "process now" action for images already converted by W3TC
@@ -299,7 +299,7 @@ class Admin_Settings {
 		if ( 0 === $processed && $attempted > 0 ) {
 			printf(
 				'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
-				esc_html__( 'None of the found images could be processed. This usually means W3 Total Cache has not finished converting every image size yet. Enable WP_DEBUG_LOG and check the PHP error log for "[SEV WebP Migrator for W3TC] Attachment #... skipped: ..." entries to see the exact reason for each one.', 'sev-webp-migrator-for-w3tc' )
+				esc_html__( 'None of the found images could be processed. This usually means W3 Total Cache has not finished converting every image size yet. Enable WP_DEBUG_LOG and check the PHP error log for "[WebP Migrator for W3TC] Attachment #... skipped: ..." entries to see the exact reason for each one.', 'sev-webp-migrator-for-w3tc' )
 			);
 		}
 	}

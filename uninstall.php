@@ -1,6 +1,6 @@
 <?php
 /**
- * Uninstall routine for SEV WebP Migrator for W3TC.
+ * Uninstall routine for WebP Migrator for W3TC.
  *
  * Called automatically by WordPress when the plugin is deleted via the admin UI.
  * Removes the plugin's own setting. Post content and attachment records that

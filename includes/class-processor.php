@@ -319,6 +319,6 @@ class Processor {
 		}
 
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic logging, gated behind WP_DEBUG_LOG.
-		error_log( sprintf( '[SEV WebP Migrator for W3TC] Attachment #%d: %s', $attachment_id, $message ) );
+		error_log( sprintf( '[WebP Migrator for W3TC] Attachment #%d: %s', $attachment_id, $message ) );
 	}
 }

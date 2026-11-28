@@ -182,6 +182,6 @@ class Save_Listener {
 		}
 
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic logging, gated behind WP_DEBUG_LOG.
-		error_log( '[SEV WebP Migrator for W3TC] Save_Listener: ' . $message );
+		error_log( '[WebP Migrator for W3TC] Save_Listener: ' . $message );
 	}
 }

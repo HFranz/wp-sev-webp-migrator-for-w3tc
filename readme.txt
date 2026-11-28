@@ -1,4 +1,4 @@
-=== SEV WebP Migrator for W3TC ===
+=== WebP Migrator for W3TC ===
 Contributors: hfranz
 Tags: webp, images, w3-total-cache, performance, optimization
 Requires at least: 6.0
@@ -12,7 +12,7 @@ Replaces image URLs with their WebP versions once W3 Total Cache ImageService co
 
 == Description ==
 
-SEV WebP Migrator for W3TC is a companion plugin for [W3 Total Cache](https://wordpress.org/plugins/w3-total-cache/) that finishes the job once W3TC ImageService has converted an image to WebP.
+WebP Migrator for W3TC is a companion plugin for [W3 Total Cache](https://wordpress.org/plugins/w3-total-cache/) that finishes the job once W3TC ImageService has converted an image to WebP.
 
 No changes to `.htaccess`, `mod_rewrite`, or web server configuration are required. Instead, it writes the replacement back into the database **once**, unlike a runtime content filter that swaps URLs on every request: as soon as W3TC marks an attachment as converted, every occurrence of that image's URL — in `post_content`, widget instances, and theme mod settings (e.g. a Customizer background image) — is permanently replaced, from its original extension (jpg/jpeg/png/gif) to `.webp`. This covers absolute, root-relative, and protocol-relative URL forms, since hand-authored content (most commonly the Customizer's "Additional CSS" field) frequently omits the scheme and/or host. The attachment's own record (attached file, metadata, mime type) is updated to match, so the Media Library and REST API stay consistent too.
 
