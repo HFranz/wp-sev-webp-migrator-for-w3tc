@@ -318,6 +318,13 @@ class Processor {
 			return;
 		}
 
+		// Shorten absolute server paths to "uploads/...": debug.log is often
+		// publicly readable, and the full path would disclose the server layout.
+		$upload_dir = wp_upload_dir( null, false );
+		if ( ! empty( $upload_dir['basedir'] ) ) {
+			$message = str_replace( untrailingslashit( $upload_dir['basedir'] ), 'uploads', $message );
+		}
+
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional diagnostic logging, gated behind WP_DEBUG_LOG.
 		error_log( sprintf( '[WebP Migrator for W3TC] Attachment #%d: %s', $attachment_id, $message ) );
 	}

@@ -61,7 +61,6 @@ class Save_Listener {
 		// tag carrying this class at all, and this avoids a regex pass over
 		// the full content (which can be large) for every post save.
 		if ( ! str_contains( $content, 'wp-image-' ) ) {
-			$this->log( 'content_save_pre fired, but no "wp-image-" substring found - nothing to check' );
 			return $content;
 		}
 
@@ -76,7 +75,6 @@ class Save_Listener {
 		$tag = $matches[0];
 
 		if ( ! preg_match( self::WP_IMAGE_CLASS, $tag, $id_matches ) ) {
-			$this->log( "img tag found but no wp-image-{ID} class in it: {$tag}" );
 			return $tag;
 		}
 
@@ -95,7 +93,11 @@ class Save_Listener {
 		}
 
 		$rewritten = $this->rewrite_urls_for_attachment( $tag, $full_url, $this->sizes_by_dimensions( $attachment_id, $full_url ) );
-		$this->log( "attachment #{$attachment_id} is image/webp, rewrote tag: {$tag} -> {$rewritten}" );
+		// Only the ID is logged, never the tag itself: it comes from post content
+		// that may be a draft or private, and debug.log is often publicly readable.
+		if ( $rewritten !== $tag ) {
+			$this->log( "attachment #{$attachment_id} is image/webp, rewrote its <img> tag" );
+		}
 
 		return $rewritten;
 	}

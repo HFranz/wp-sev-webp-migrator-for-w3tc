@@ -39,9 +39,16 @@ class Source_Cleaner {
 				continue;
 			}
 
-			// Only ever delete files that resolve inside uploads directory.
-			$real_old = realpath( $old );
-			if ( false === $real_old || false === $uploads_basedir || ! str_starts_with( $real_old, $uploads_basedir . DIRECTORY_SEPARATOR ) ) {
+			// Only ever delete files that resolve inside uploads directory, and
+			// only in favour of a replacement that lives there as well.
+			if ( ! self::is_inside( $old, $uploads_basedir ) || ! self::is_inside( $new, $uploads_basedir ) ) {
+				continue;
+			}
+
+			// The replacement must be a readable, non-empty image: a 0-byte or
+			// truncated .webp left behind by a failed conversion would otherwise
+			// still count as "exists" and the original would be lost for good.
+			if ( ! self::is_valid_image( $new ) ) {
 				continue;
 			}
 
@@ -53,5 +60,39 @@ class Source_Cleaner {
 		}
 
 		return $deleted;
+	}
+
+	/**
+	 * Whether a path resolves (symlinks followed) to a location inside the given directory.
+	 *
+	 * @param string       $path    Filesystem path.
+	 * @param string|false $basedir Already realpath()-resolved directory, or false if unknown.
+	 * @return bool
+	 */
+	private static function is_inside( string $path, string|false $basedir ): bool {
+		if ( false === $basedir ) {
+			return false;
+		}
+
+		$real = realpath( $path );
+
+		return false !== $real && str_starts_with( $real, $basedir . DIRECTORY_SEPARATOR );
+	}
+
+	/**
+	 * Whether a file is a non-empty image with readable dimensions.
+	 *
+	 * @param string $path Filesystem path.
+	 * @return bool
+	 */
+	private static function is_valid_image( string $path ): bool {
+		$size = filesize( $path );
+		if ( false === $size || $size <= 0 ) {
+			return false;
+		}
+
+		$info = wp_getimagesize( $path );
+
+		return is_array( $info ) && $info[0] > 0 && $info[1] > 0;
 	}
 }

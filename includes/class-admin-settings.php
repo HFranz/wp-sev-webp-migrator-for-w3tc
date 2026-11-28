@@ -175,11 +175,7 @@ class Admin_Settings {
 
 			<h2><?php esc_html_e( 'Process Previously Converted Images', 'sev-webp-migrator-for-w3tc' ); ?></h2>
 			<p class="sevwmfw3tc-intro-spaced">
-				<?php
-				printf(
-					/* translators: %d: number of not-yet-processed attachments. */
-					esc_html__( 'Images that were converted by W3 Total Cache before this plugin was activated are not processed automatically.', 'sev-webp-migrator-for-w3tc' ));
-				?>
+				<?php esc_html_e( 'Images that were converted by W3 Total Cache before this plugin was activated are not processed automatically.', 'sev-webp-migrator-for-w3tc' ); ?>
 			</p>
 			<p><strong>
 				<?php
