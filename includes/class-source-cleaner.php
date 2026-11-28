@@ -23,11 +23,15 @@ class Source_Cleaner {
 	 * Deletes the old-extension files for which a WebP counterpart exists.
 	 *
 	 * @param array<int, array{old: string, new: string}> $path_pairs Filesystem old/new path pairs.
+	 * @param (callable(string): void)|null                $log        Optional diagnostic logger, called with the
+	 *                                                                 reason whenever a pair is skipped.
 	 * @return int Number of files deleted.
 	 */
-	public function delete_originals( array $path_pairs ): int {
+	public function delete_originals( array $path_pairs, ?callable $log = null ): int {
 		$upload_dir = wp_upload_dir();
 		$uploads_basedir = isset( $upload_dir['basedir'] ) ? realpath( $upload_dir['basedir'] ) : false;
+
+		$log ??= static function ( string $message ): void {};
 
 		$deleted = 0;
 
@@ -35,13 +39,24 @@ class Source_Cleaner {
 			$old = $pair['old'];
 			$new = $pair['new'];
 
-			if ( '' === $old || $old === $new || ! file_exists( $new ) || ! file_exists( $old ) ) {
+			if ( '' === $old || $old === $new ) {
+				continue;
+			}
+
+			if ( ! file_exists( $old ) ) {
+				$log( "original not deleted, it no longer exists: {$old}" );
+				continue;
+			}
+
+			if ( ! file_exists( $new ) ) {
+				$log( "original not deleted, its WebP counterpart does not exist: {$new}" );
 				continue;
 			}
 
 			// Only ever delete files that resolve inside uploads directory, and
 			// only in favour of a replacement that lives there as well.
 			if ( ! self::is_inside( $old, $uploads_basedir ) || ! self::is_inside( $new, $uploads_basedir ) ) {
+				$log( "original not deleted, it or its WebP counterpart lies outside the uploads directory: {$old}" );
 				continue;
 			}
 
@@ -49,14 +64,18 @@ class Source_Cleaner {
 			// truncated .webp left behind by a failed conversion would otherwise
 			// still count as "exists" and the original would be lost for good.
 			if ( ! self::is_valid_image( $new ) ) {
+				$log( "original not deleted, its WebP counterpart is empty or not a readable image: {$new}" );
 				continue;
 			}
 
 			wp_delete_file( $old );
 
-			if ( ! file_exists( $old ) ) {
-				++$deleted;
+			if ( file_exists( $old ) ) {
+				$log( "original could not be deleted (check file permissions): {$old}" );
+				continue;
 			}
+
+			++$deleted;
 		}
 
 		return $deleted;

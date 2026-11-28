@@ -109,6 +109,8 @@ Yes. Each site processes its own W3 Total Cache ImageService conversions indepen
 * Renamed the plugin to "WebP Migrator for W3TC". The plugin slug, text domain, and settings are unchanged.
 * Added purging of the W3 Total Cache page cache after URLs are rewritten. Previously, cached pages kept serving the original image URLs, which showed as broken images once "Delete source images" had removed those files.
 * Original files are now only deleted if their `.webp` counterpart is a valid, non-empty image inside the uploads directory, so a failed or truncated conversion can no longer cost the original.
+* Fixed the deferred deletion of a freshly-uploaded image's originals silently deleting nothing when the scheduled event ran in a context where WordPress lives under a different path (e.g. WP-CLI or a cron container, or after moving the site). Scheduled events now store paths relative to the uploads directory.
+* The debug log now states why an original file was not deleted.
 * Diagnostic logging no longer writes post content (`<img>` tags) or absolute server paths to the debug log, which is often publicly readable.
 * Fixed a translated text on the settings page that could break the page if its translation contained a `%` character.
 * Tested up to WordPress 7.2 and W3 Total Cache 2.11.1.

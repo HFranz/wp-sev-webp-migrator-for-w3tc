@@ -39,7 +39,10 @@ per Content-Filter vorzutäuschen.
   `sevwmfw3tc_deletion_grace_period`, Standard 15 Minuten), wird das Löschen der Originaldateien statt sofort per
   `wp_schedule_single_event()` auf `Processor::DEFERRED_DELETION_HOOK` verschoben (siehe `handle_deferred_deletion()`)
   – verhindert, dass ein frisch hochgeladenes, gerade im Editor eingefügtes Bild als kaputt angezeigt wird, während
-  der Browser es noch von der alten URL lädt.
+  der Browser es noch von der alten URL lädt. Die Pfade im Cron-Event werden **relativ zum Uploads-Verzeichnis** gespeichert
+  (`to_relative_pairs()`/`to_absolute_pairs()`), weil das Event in einem anderen Kontext laufen kann (WP-CLI,
+  Cron-Container, umgezogene Site), in dem absolute Pfade nicht existieren. Alte Events mit absoluten Pfaden werden
+  unverändert verarbeitet.
 - `includes/class-conversion-listener.php` – hookt `added_post_meta`/`updated_post_meta`, reagiert nur auf
   `meta_key === 'w3tc_imageservice'` mit `status === 'converted'` und ruft dann `Processor::process()` auf.
 - `includes/class-save-listener.php` – `Save_Listener`: hookt `content_save_pre`, schließt eine Race Condition

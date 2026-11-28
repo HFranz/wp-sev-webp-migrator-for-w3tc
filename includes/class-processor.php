@@ -121,7 +121,7 @@ class Processor {
 				// a future normal run to pick it back up.
 				$this->schedule_deferred_deletion( $attachment_id, $path_pairs );
 			} else {
-				$result['files_deleted'] = $this->source_cleaner->delete_originals( $path_pairs );
+				$result['files_deleted'] = $this->source_cleaner->delete_originals( $path_pairs, $this->logger_for( $attachment_id ) );
 			}
 		}
 
@@ -136,14 +136,104 @@ class Processor {
 	 * the original and its `.webp` counterpart still exist before touching
 	 * anything.
 	 *
-	 * @param int                                            $attachment_id Attachment post ID (unused directly, kept for context/logging parity with process()).
-	 * @param array<int, array{old: string, new: string}>    $path_pairs    The same path pairs process() had already resolved.
+	 * The pairs arrive relative to the uploads directory (see
+	 * {@see self::schedule_deferred_deletion()}) and are resolved against the
+	 * uploads directory of the context the event actually runs in. Events
+	 * scheduled by versions before 2.5.0 carry absolute paths, which are used
+	 * as-is.
+	 *
+	 * @param int                                            $attachment_id Attachment post ID, for logging.
+	 * @param array<int, array{old: string, new: string}>    $path_pairs    The path pairs process() had already resolved,
+	 *                                                                      relative to the uploads directory.
 	 * @return void
 	 */
 	public function handle_deferred_deletion( int $attachment_id, array $path_pairs ): void {
-		$deleted = $this->source_cleaner->delete_originals( $path_pairs );
+		$deleted = $this->source_cleaner->delete_originals( self::to_absolute_pairs( $path_pairs ), $this->logger_for( $attachment_id ) );
 
 		$this->log_skip( $attachment_id, "deferred deletion retried, {$deleted} file(s) deleted" );
+	}
+
+	/**
+	 * Converts absolute path pairs to paths relative to the uploads directory.
+	 *
+	 * Stored in the scheduled event instead of absolute paths: the event may
+	 * run in a different context than the one that scheduled it - e.g. WP-CLI
+	 * or a cron container where WordPress lives under another path, or after
+	 * the site was moved - where an absolute path would no longer exist and
+	 * the deletion would silently do nothing. A path outside the uploads
+	 * directory is kept absolute (Source_Cleaner refuses to delete it anyway).
+	 *
+	 * @param array<int, array{old: string, new: string}> $path_pairs Absolute path pairs.
+	 * @return array<int, array{old: string, new: string}>
+	 */
+	private static function to_relative_pairs( array $path_pairs ): array {
+		$basedir = self::uploads_basedir();
+		if ( null === $basedir ) {
+			return $path_pairs;
+		}
+
+		$prefix = $basedir . '/';
+
+		foreach ( $path_pairs as $i => $pair ) {
+			foreach ( array( 'old', 'new' ) as $key ) {
+				if ( str_starts_with( $pair[ $key ], $prefix ) ) {
+					$path_pairs[ $i ][ $key ] = substr( $pair[ $key ], strlen( $prefix ) );
+				}
+			}
+		}
+
+		return $path_pairs;
+	}
+
+	/**
+	 * Resolves path pairs relative to the uploads directory back to absolute
+	 * paths. Already-absolute paths are left as they are.
+	 *
+	 * @param array<int, array{old: string, new: string}> $path_pairs Relative (or absolute) path pairs.
+	 * @return array<int, array{old: string, new: string}>
+	 */
+	private static function to_absolute_pairs( array $path_pairs ): array {
+		$basedir = self::uploads_basedir();
+		if ( null === $basedir ) {
+			return $path_pairs;
+		}
+
+		foreach ( $path_pairs as $i => $pair ) {
+			foreach ( array( 'old', 'new' ) as $key ) {
+				if ( '' !== $pair[ $key ] && ! path_is_absolute( $pair[ $key ] ) ) {
+					$path_pairs[ $i ][ $key ] = $basedir . '/' . $pair[ $key ];
+				}
+			}
+		}
+
+		return $path_pairs;
+	}
+
+	/**
+	 * The current site's uploads directory, without trailing slash.
+	 *
+	 * @return string|null Null if it cannot be determined.
+	 */
+	private static function uploads_basedir(): ?string {
+		$upload_dir = wp_upload_dir( null, false );
+
+		if ( empty( $upload_dir['basedir'] ) || ! is_string( $upload_dir['basedir'] ) ) {
+			return null;
+		}
+
+		return rtrim( $upload_dir['basedir'], '/\\' );
+	}
+
+	/**
+	 * A logger for Source_Cleaner that prefixes each message with this attachment's ID.
+	 *
+	 * @param int $attachment_id Attachment post ID.
+	 * @return callable(string): void
+	 */
+	private function logger_for( int $attachment_id ): callable {
+		return function ( string $message ) use ( $attachment_id ): void {
+			$this->log_skip( $attachment_id, $message );
+		};
 	}
 
 	/**
@@ -187,7 +277,7 @@ class Processor {
 	 * @return void
 	 */
 	private function schedule_deferred_deletion( int $attachment_id, array $path_pairs ): void {
-		$args = array( $attachment_id, $path_pairs );
+		$args = array( $attachment_id, self::to_relative_pairs( $path_pairs ) );
 
 		if ( wp_next_scheduled( self::DEFERRED_DELETION_HOOK, $args ) ) {
 			return;

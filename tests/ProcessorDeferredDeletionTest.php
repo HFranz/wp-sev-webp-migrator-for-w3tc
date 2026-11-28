@@ -92,6 +92,98 @@ final class ProcessorDeferredDeletionTest extends TestCase {
 		$this->assertCount( 1, WPTestStub::$scheduled_events );
 	}
 
+	public function test_stores_path_pairs_relative_to_the_uploads_directory(): void {
+		WPTestStub::$uploads_basedir = '/var/www/html/wp-content/uploads/sites/2';
+
+		$this->schedule(
+			new Processor(),
+			5,
+			array(
+				array(
+					'old' => '/var/www/html/wp-content/uploads/sites/2/2026/11/photo.png',
+					'new' => '/var/www/html/wp-content/uploads/sites/2/2026/11/photo.webp',
+				),
+			)
+		);
+
+		$this->assertSame(
+			array(
+				5,
+				array(
+					array(
+						'old' => '2026/11/photo.png',
+						'new' => '2026/11/photo.webp',
+					),
+				),
+			),
+			WPTestStub::$scheduled_events[0]['args']
+		);
+	}
+
+	/**
+	 * Reproduces the reported bug: the event was scheduled in the web
+	 * container (WordPress under /var/www/html) but ran where WordPress lives
+	 * under another path, so the stored absolute paths didn't exist there and
+	 * nothing was deleted.
+	 */
+	public function test_deferred_deletion_resolves_relative_pairs_against_the_running_contexts_uploads_directory(): void {
+		$uploads = sys_get_temp_dir() . '/sevwmfw3tc-test-' . uniqid();
+		mkdir( $uploads . '/2026/11', 0777, true );
+		file_put_contents( $uploads . '/2026/11/photo.png', 'png' );
+		file_put_contents( $uploads . '/2026/11/photo.webp', 'webp' );
+
+		WPTestStub::$uploads_basedir = '/var/www/html/wp-content/uploads';
+		$processor                   = new Processor();
+		$this->schedule(
+			$processor,
+			5,
+			array(
+				array(
+					'old' => '/var/www/html/wp-content/uploads/2026/11/photo.png',
+					'new' => '/var/www/html/wp-content/uploads/2026/11/photo.webp',
+				),
+			)
+		);
+
+		// The event now runs in a context with a different uploads path.
+		WPTestStub::$uploads_basedir = $uploads;
+		$processor->handle_deferred_deletion( ...WPTestStub::$scheduled_events[0]['args'] );
+
+		$this->assertFileDoesNotExist( $uploads . '/2026/11/photo.png' );
+		$this->assertFileExists( $uploads . '/2026/11/photo.webp' );
+
+		unlink( $uploads . '/2026/11/photo.webp' );
+		rmdir( $uploads . '/2026/11' );
+		rmdir( $uploads . '/2026' );
+		rmdir( $uploads );
+	}
+
+	/**
+	 * Events scheduled before 2.5.0 carry absolute paths; they must still work.
+	 */
+	public function test_deferred_deletion_still_accepts_legacy_absolute_pairs(): void {
+		$uploads = sys_get_temp_dir() . '/sevwmfw3tc-test-' . uniqid();
+		mkdir( $uploads, 0777, true );
+		file_put_contents( $uploads . '/photo.png', 'png' );
+		file_put_contents( $uploads . '/photo.webp', 'webp' );
+
+		WPTestStub::$uploads_basedir = $uploads;
+		( new Processor() )->handle_deferred_deletion(
+			5,
+			array(
+				array(
+					'old' => $uploads . '/photo.png',
+					'new' => $uploads . '/photo.webp',
+				),
+			)
+		);
+
+		$this->assertFileDoesNotExist( $uploads . '/photo.png' );
+
+		unlink( $uploads . '/photo.webp' );
+		rmdir( $uploads );
+	}
+
 	/**
 	 * Confirms the grace period respects the sevwmfw3tc_deletion_grace_period
 	 * filter, so a site can shorten or lengthen it without editing the plugin.

@@ -151,6 +151,23 @@ function clean_post_cache( int $post_id ): void {
 	WPTestStub::$cleaned_post_caches[] = $post_id;
 }
 
+function wp_upload_dir( ?string $time = null, bool $create_dir = true, bool $refresh_cache = false ): array {
+	return array( 'basedir' => WPTestStub::$uploads_basedir );
+}
+
+function path_is_absolute( string $path ): bool {
+	return str_starts_with( $path, '/' ) || (bool) preg_match( '#^[a-zA-Z]:[\\\\/]#', $path );
+}
+
+function wp_delete_file( string $file ): void {
+	@unlink( $file );
+}
+
+/** Treats any non-empty file as a 1x1 image; the real check is WordPress core's. */
+function wp_getimagesize( string $filename ): array|false {
+	return is_file( $filename ) && filesize( $filename ) > 0 ? array( 1, 1 ) : false;
+}
+
 function get_post_type( int $post_id ): string|false {
 	return WPTestStub::$post_types[ $post_id ] ?? 'post';
 }
@@ -290,6 +307,9 @@ class WPTestStub {
 	/** option_name => value */
 	public static array $options = array();
 
+	/** basedir returned by wp_upload_dir() */
+	public static string $uploads_basedir = '/var/www/html/wp-content/uploads';
+
 	/** post_id => post type returned by get_post_type() (default "post") */
 	public static array $post_types = array();
 
@@ -321,6 +341,7 @@ class WPTestStub {
 		self::$options                            = array();
 		self::$cleaned_post_caches                = array();
 		self::$post_types                         = array();
+		self::$uploads_basedir                    = '/var/www/html/wp-content/uploads';
 		self::$w3tc_flushes                       = array();
 		self::$image_subsizes_calls               = array();
 		self::$create_image_subsizes_side_effect  = null;
