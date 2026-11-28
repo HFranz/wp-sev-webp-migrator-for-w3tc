@@ -35,6 +35,7 @@ final class ContentReplacerTest extends TestCase {
 		$this->assertSame( '<img src="http://example.com/uploads/photo.webp" />', $wpdb->post_content[1] );
 		$this->assertSame( '<img src="http://example.com/uploads/other.jpg" />', $wpdb->post_content[2] );
 		$this->assertSame( array( 1 ), WPTestStub::$cleaned_post_caches );
+		$this->assertSame( array( 1 ), $replacer->last_updated_post_ids() );
 	}
 
 	public function test_replace_updates_every_post_referencing_the_image(): void {

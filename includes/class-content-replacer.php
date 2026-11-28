@@ -22,6 +22,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Content_Replacer {
 
 	/**
+	 * IDs of the posts the most recent {@see self::replace()} call updated.
+	 *
+	 * @var int[]
+	 */
+	private array $last_updated_post_ids = array();
+
+	/**
+	 * IDs of the posts the most recent {@see self::replace()} call updated,
+	 * so the caller can purge exactly those from the page cache.
+	 *
+	 * @return int[]
+	 */
+	public function last_updated_post_ids(): array {
+		return $this->last_updated_post_ids;
+	}
+
+	/**
 	 * Replaces every old→new URL pair in the content of all posts that reference them.
 	 *
 	 * Each pair is checked in every form {@see Attachment_Urls::url_variants()}
@@ -33,6 +50,8 @@ class Content_Replacer {
 	 */
 	public function replace( array $url_pairs ): int {
 		global $wpdb;
+
+		$this->last_updated_post_ids = array();
 
 		if ( empty( $url_pairs ) ) {
 			return 0;
@@ -49,6 +68,8 @@ class Content_Replacer {
 				$this->replace_one( $wpdb, $variant['old'], $variant['new'], $updated_post_ids );
 			}
 		}
+
+		$this->last_updated_post_ids = array_map( 'intval', array_keys( $updated_post_ids ) );
 
 		return count( $updated_post_ids );
 	}

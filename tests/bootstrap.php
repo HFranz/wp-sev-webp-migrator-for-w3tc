@@ -151,6 +151,19 @@ function clean_post_cache( int $post_id ): void {
 	WPTestStub::$cleaned_post_caches[] = $post_id;
 }
 
+function get_post_type( int $post_id ): string|false {
+	return WPTestStub::$post_types[ $post_id ] ?? 'post';
+}
+
+// W3 Total Cache flush API stubs, recording each call.
+function w3tc_flush_post( int $post_id, bool $force = false, ?array $extras = null ): void {
+	WPTestStub::$w3tc_flushes[] = array( 'post', $post_id );
+}
+
+function w3tc_flush_posts( ?array $extras = null ): void {
+	WPTestStub::$w3tc_flushes[] = array( 'posts' );
+}
+
 /**
  * Stub for WordPress core's subsize generator. Records the call and, if a
  * test configured one, runs a side effect (e.g. actually creating the
@@ -277,6 +290,12 @@ class WPTestStub {
 	/** option_name => value */
 	public static array $options = array();
 
+	/** post_id => post type returned by get_post_type() (default "post") */
+	public static array $post_types = array();
+
+	/** @var array<int, array> Calls recorded by the w3tc_flush_post()/w3tc_flush_posts() stubs. */
+	public static array $w3tc_flushes = array();
+
 	/** post_ids passed to clean_post_cache() */
 	public static array $cleaned_post_caches = array();
 
@@ -301,6 +320,8 @@ class WPTestStub {
 		self::$post_meta                          = array();
 		self::$options                            = array();
 		self::$cleaned_post_caches                = array();
+		self::$post_types                         = array();
+		self::$w3tc_flushes                       = array();
 		self::$image_subsizes_calls               = array();
 		self::$create_image_subsizes_side_effect  = null;
 		self::$posts                              = array();
@@ -326,6 +347,7 @@ require_once dirname( __DIR__ ) . '/includes/class-options-replacer.php';
 // Processor's own gate before migrate()/delete_originals() would actually run.
 require_once dirname( __DIR__ ) . '/includes/class-attachment-migrator.php';
 require_once dirname( __DIR__ ) . '/includes/class-source-cleaner.php';
+require_once dirname( __DIR__ ) . '/includes/class-cache-flusher.php';
 require_once dirname( __DIR__ ) . '/includes/class-processor.php';
 require_once dirname( __DIR__ ) . '/includes/class-save-listener.php';
 

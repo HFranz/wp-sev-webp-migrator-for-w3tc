@@ -26,12 +26,14 @@ class Processor {
 	private Options_Replacer $options_replacer;
 	private Attachment_Migrator $attachment_migrator;
 	private Source_Cleaner $source_cleaner;
+	private Cache_Flusher $cache_flusher;
 
 	public function __construct() {
 		$this->content_replacer    = new Content_Replacer();
 		$this->options_replacer    = new Options_Replacer();
 		$this->attachment_migrator = new Attachment_Migrator();
 		$this->source_cleaner      = new Source_Cleaner();
+		$this->cache_flusher       = new Cache_Flusher();
 	}
 
 	/**
@@ -97,6 +99,11 @@ class Processor {
 		$result['posts_updated']   = $this->content_replacer->replace( $url_pairs );
 		$result['options_updated'] = $this->options_replacer->replace( $url_pairs );
 		$result['migrated']        = $this->attachment_migrator->migrate( $attachment_id, $path_pairs );
+
+		// The rewrites above bypass the save hooks W3TC purges its page cache
+		// on. Purge before any original is deleted, so no cached page is left
+		// pointing at a file that no longer exists.
+		$this->cache_flusher->flush( $this->content_replacer->last_updated_post_ids(), $result['options_updated'] > 0 );
 
 		if ( $delete_originals && $result['migrated'] ) {
 			if ( $this->uploaded_too_recently_to_delete( $attachment_id ) ) {

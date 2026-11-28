@@ -2,9 +2,9 @@
 Contributors: hfranz
 Tags: webp, images, w3-total-cache, performance, optimization
 Requires at least: 6.0
-Tested up to: 7.1
+Tested up to: 7.2
 Requires PHP: 8.0
-Stable tag: 2.4.0
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,8 +27,9 @@ This is an independent, unofficial add-on and is not affiliated with, endorsed b
 * Replaces every reference to the converted image (full size and all intermediate sizes) — in `post_content` across all posts, widget instances, and theme mod settings — as absolute, root-relative, or protocol-relative URLs.
 * Updates the attachment's own file reference, metadata, and mime type to match.
 * Optional: deletes the original source files after a successful replacement.
-* A source file is only ever deleted once its `.webp` counterpart has been confirmed to exist on disk.
-* Manual "process now" tool in **Settings → WebP Migrator for W3TC** for images that were converted before this plugin was active.
+* A source file is only ever deleted once its `.webp` counterpart has been confirmed to exist inside the uploads directory as a valid, non-empty image.
+* Purges the W3 Total Cache page cache for every rewritten post (or all cached pages, if a widget, theme mod, or site-wide content such as "Additional CSS" or a block theme template changed), so no cached page keeps pointing at the original files.
+* Manual "process now" tool in **Settings → WebP Migrator for W3TC** for images that were converted before this plugin was active (20 images per run).
 * Diagnostic logging (behind `WP_DEBUG_LOG`) explains exactly why an image was skipped, to help troubleshoot a batch that makes no progress.
 * Also corrects an image reference at the moment a post is saved, for the rare case where the image was inserted while still being converted in the background.
 * Deletion of a freshly-uploaded image's original files is deferred for a short grace period after upload, so it isn't pulled out from under an editor session that might still be rendering it from the original URL.
@@ -40,12 +41,13 @@ This is an independent, unofficial add-on and is not affiliated with, endorsed b
 3. If W3TC didn't generate one of the intermediate sizes, the plugin regenerates it itself from the already-converted full-size WebP, so a single silently-skipped size doesn't block the whole attachment forever.
 4. It scans `post_content` across all posts, as well as widget instances and theme mod settings, for the old URLs — in absolute, root-relative, and protocol-relative form — and replaces them with the `.webp` versions directly in the database.
 5. The attachment's own `_wp_attached_file`, `_wp_attachment_metadata`, and `post_mime_type` are updated to point at the `.webp` files.
-6. If enabled in the settings, the original files (jpg/jpeg/png/gif) are deleted from disk.
+6. The W3 Total Cache page cache is purged for the affected content.
+7. If enabled in the settings, the original files (jpg/jpeg/png/gif) are deleted from disk.
 
 **Requirements**
 
 * W3 Total Cache must be installed and active.
-* Images must be converted using **Media → W3TC Image Service**; this plugin does not perform any conversion itself.
+* Images must be converted using **Media → Total Cache Image Converter**; this plugin does not perform any conversion itself.
 
 **Limitations**
 
@@ -53,7 +55,11 @@ This plugin **does not convert images** to WebP — conversion is handled entire
 
 This plugin only handles **WebP**. AVIF is not supported: W3 Total Cache only offers AVIF conversion in its paid Pro version, and this plugin's free-tier ImageService integration only ever sees WebP conversions.
 
-Content stored outside `post_content`, widget instances, and theme mods is not scanned — for example a page builder's own design data stored in post meta (such as Elementor). If an image is referenced only from such a source, its URL there will not be updated.
+Content stored outside `post_content`, widget instances, and theme mods is not scanned — for example post excerpts, custom fields, or a page builder's own design data stored in post meta (such as Elementor). If an image is referenced only from such a source, its URL there will not be updated.
+
+Post revisions are deliberately left untouched. Restoring a revision saved before an image was migrated brings back its original URL — which no longer works once the original file has been deleted.
+
+The migration is permanent: deactivating or deleting this plugin does not revert any rewritten URL or attachment record, and there is no built-in way back to the original files.
 
 Deleting source images is permanent and cannot be undone by this plugin. Keep backups before enabling automatic deletion.
 
@@ -63,7 +69,7 @@ Deleting source images is permanent and cannot be undone by this plugin. Keep ba
 2. Activate the plugin through the **Plugins** menu in WordPress.
 3. Ensure W3 Total Cache is installed and active.
 4. Optionally enable "Delete source images" under **Settings → WebP Migrator for W3TC**.
-5. For images W3TC already converted before activation, use the "process now" tool on the same settings page.
+5. For images W3TC already converted before activation, use the "process now" tool on the same settings page. Each run processes up to 20 images; repeat it until no images remain.
 
 == Frequently Asked Questions ==
 
@@ -77,18 +83,35 @@ Widget instances (e.g. a Custom HTML/Text widget) and theme mod settings (e.g. a
 
 = Is deleting source images safe? =
 
-A source file is only deleted once its `.webp` counterpart has been confirmed to exist on disk, after post content, widgets, theme mods, and the attachment record have already been updated. For a freshly-uploaded image, deletion is additionally deferred for a short grace period (15 minutes by default) to avoid interfering with an active editing session. Deletion is still permanent and disabled by default — enable it deliberately, and keep backups.
+A source file is only deleted once its `.webp` counterpart has been confirmed to exist inside the uploads directory as a valid, non-empty image, after post content, widgets, theme mods, and the attachment record have already been updated and the page cache has been purged. For a freshly-uploaded image, deletion is additionally deferred for a short grace period to avoid interfering with an active editing session. Deletion is still permanent and disabled by default — enable it deliberately, and keep backups.
+
+= Can I change the grace period before a fresh upload's originals are deleted? =
+
+Yes. It defaults to 15 minutes and can be changed with the `sevwmfw3tc_deletion_grace_period` filter (in seconds):
+
+`add_filter( 'sevwmfw3tc_deletion_grace_period', fn() => HOUR_IN_SECONDS );`
+
+= Does it purge the W3 Total Cache page cache? =
+
+Yes. Since URLs are rewritten directly in the database, W3 Total Cache's own purge-on-save does not run, so this plugin purges the affected posts itself. If a widget, theme mod, or site-wide content (such as "Additional CSS", block theme templates, global styles, or navigation menus) changed, every cached page is purged instead. A CDN or other external cache in front of the site is only purged as far as W3 Total Cache's own CDN integration does so.
+
+= What happens if I deactivate or delete the plugin? =
+
+Nothing is reverted. Rewritten URLs and attachment records stay on WebP, and deleted original files stay deleted. Deleting the plugin only removes its own "Delete source images" setting.
 
 = Does it work with WordPress Multisite installations? =
 
-Yes. Each site processes its own W3 Total Cache ImageService conversions independently.
-
-== Screenshots ==
-screenshot-1.png
-screenshot-2.png
-screenshot-3.png
+Yes. Each site processes its own W3 Total Cache ImageService conversions independently, and the "Delete source images" setting and the "process now" tool are configured per site. Deleting the plugin removes that setting only on the main site; on the other sites of the network it stays in the database (it is harmless there, as nothing reads it without the plugin).
 
 == Changelog ==
+
+= 2.5.0 =
+* Renamed the plugin to "WebP Migrator for W3TC". The plugin slug, text domain, and settings are unchanged.
+* Added purging of the W3 Total Cache page cache after URLs are rewritten. Previously, cached pages kept serving the original image URLs, which showed as broken images once "Delete source images" had removed those files.
+* Original files are now only deleted if their `.webp` counterpart is a valid, non-empty image inside the uploads directory, so a failed or truncated conversion can no longer cost the original.
+* Diagnostic logging no longer writes post content (`<img>` tags) or absolute server paths to the debug log, which is often publicly readable.
+* Fixed a translated text on the settings page that could break the page if its translation contained a `%` character.
+* Tested up to WordPress 7.2 and W3 Total Cache 2.11.1.
 
 = 2.4.0 =
 * Added a "Support" and a star-rating link to the plugin's row on the Plugins list page.
@@ -137,3 +160,8 @@ screenshot-3.png
 
 = 1.0.0 =
 * Initial release.
+
+== Upgrade Notice ==
+
+= 2.5.0 =
+Purges the W3 Total Cache page cache after rewriting image URLs and only deletes originals once a valid WebP replacement is confirmed. Recommended for everyone using "Delete source images".

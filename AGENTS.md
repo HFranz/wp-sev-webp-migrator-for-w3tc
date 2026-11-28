@@ -28,9 +28,13 @@ per Content-Filter vorzutäuschen.
   (`_wp_attached_file`, `_wp_attachment_metadata`, `post_mime_type`), damit Mediathek/REST-API konsistent bleiben.
 - `includes/class-source-cleaner.php` – `Source_Cleaner::delete_originals()`: löscht die alten Dateien nur, wenn
   das `.webp`-Gegenstück nachweislich existiert und der Pfad innerhalb des Uploads-Verzeichnisses liegt.
+- `includes/class-cache-flusher.php` – `Cache_Flusher::flush()`: leert nach dem Ersetzen den W3TC-Seiten-Cache
+  (die direkten DB-Schreibzugriffe umgehen W3TCs Purge-on-Save). Pro Post via `w3tc_flush_post()`; bei geänderten
+  Options oder site-weiten Post-Typen (`custom_css`, `wp_template`, `wp_template_part`, `wp_global_styles`,
+  `wp_navigation`) einmalig `w3tc_flush_posts()`. Die IDs liefert `Content_Replacer::last_updated_post_ids()`.
 - `includes/class-processor.php` – `Processor::process()`: orchestriert obige Klassen für ein Attachment in der
-  Reihenfolge Content ersetzen → Options (Widgets/Theme-Mods) ersetzen → Attachment migrieren → optional
-  Quelldateien löschen. `already_processed()` prüft `post_mime_type === 'image/webp'` als Idempotenz-Marker (kein
+  Reihenfolge Content ersetzen → Options (Widgets/Theme-Mods) ersetzen → Attachment migrieren → Cache leeren →
+  optional Quelldateien löschen. `already_processed()` prüft `post_mime_type === 'image/webp'` als Idempotenz-Marker (kein
   zusätzliches Postmeta nötig). Ist das Attachment jünger als die Gnadenfrist (Filter
   `sevwmfw3tc_deletion_grace_period`, Standard 15 Minuten), wird das Löschen der Originaldateien statt sofort per
   `wp_schedule_single_event()` auf `Processor::DEFERRED_DELETION_HOOK` verschoben (siehe `handle_deferred_deletion()`)
@@ -67,8 +71,9 @@ Quellbilder ist standardmäßig deaktiviert und unwiderruflich.
   entgegen und leitet die WebP-Pfade **nicht** mehr selbst her (früher eigene, unabhängige Vorhersage-Logik – konnte
   von der in `resolve_webp_case()` abweichen, u.a. beim W3TC-Kind-Attachment-Fallback, und lieferte dann `false`
   zurück, obwohl der Content bereits korrekt umgeschrieben war).
-- Löschoperationen (`Source_Cleaner`) prüfen immer zuerst `file_exists()` auf die `.webp`-Zieldatei und die
-  Uploads-Verzeichnis-Zugehörigkeit, bevor eine Originaldatei angefasst wird.
+- Löschoperationen (`Source_Cleaner`) prüfen immer zuerst, dass die `.webp`-Zieldatei ein gültiges, nicht-leeres
+  Bild ist (`filesize()`, `wp_getimagesize()`) und dass Original und Ziel im Uploads-Verzeichnis liegen, bevor eine
+  Originaldatei angefasst wird.
 
 ## Tests (kein WP-Testsuite/wp-env!)
 - `tests/bootstrap.php` definiert eigene, minimale Stubs für WP-Funktionen, lädt dann das echte Plugin und feuert
